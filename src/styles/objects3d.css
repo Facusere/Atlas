@@ -1,0 +1,1021 @@
+/* ==========================================================================
+   Atlas 3D — 3D Objects Specification
+   1. 5-Layer Sculptural Country Cards (Z0..Z38 + Specular Glare + Holographic Foil)
+   2. 3D Flip Capsule Modal (Cara A Objects / Cara B Leaflet Map)
+   3. 3D Coat of Arms Medallion
+   4. 3D Spinning Currency Coin
+   5. 3D Cartographic Compass + Live Clock
+   6. 3D Mini Weather Objects
+   7. 3D Volumetric Comparison Prisms
+   8. 3D Collectible Passport Stamps
+   ========================================================================== */
+
+/* ---------- 1. Static 3D-Layered Card with Mouse Spotlight & Border Glow ---------- */
+.country-card {
+  --glare-x: 50%;
+  --glare-y: 50%;
+
+  position: relative;
+  border-radius: 18px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.card-chassis {
+  position: relative;
+  border-radius: 18px;
+  padding: 12px 12px 14px;
+  background: linear-gradient(155deg, rgba(20, 56, 68, 0.86), rgba(9, 25, 34, 0.94));
+  border: 1px solid var(--border);
+  box-shadow:
+    0 14px 32px rgba(0, 0, 0, 0.38),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16);
+  transition: border-color 0.22s ease, box-shadow 0.22s ease;
+  overflow: hidden;
+}
+
+.country-card:hover .card-chassis {
+  border-color: var(--border-bright);
+  box-shadow:
+    0 18px 40px rgba(0, 0, 0, 0.52),
+    0 0 26px rgba(var(--accent-rgb), 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.26);
+}
+
+/* Passport Foil / Holographic Border on Visited & Wishlist */
+.country-card.is-visited .card-chassis {
+  border-color: rgba(245, 158, 11, 0.62);
+  box-shadow:
+    0 16px 36px rgba(0, 0, 0, 0.45),
+    0 0 22px rgba(245, 158, 11, 0.22);
+}
+
+.country-card.is-wishlist .card-chassis {
+  border-color: rgba(16, 185, 129, 0.58);
+}
+
+/* Mouse-tracking Radial Spotlight + Holographic Foil Reflection */
+.card-glare {
+  position: absolute;
+  inset: 0;
+  border-radius: 18px;
+  pointer-events: none;
+  z-index: 2;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  background: radial-gradient(
+    circle 190px at var(--glare-x) var(--glare-y),
+    rgba(var(--accent-rgb), 0.22),
+    rgba(255, 255, 255, 0.08) 38%,
+    transparent 72%
+  );
+}
+
+/* Mouse-tracking Reactive Border Glow */
+.card-border-glow {
+  position: absolute;
+  inset: 0;
+  border-radius: 18px;
+  padding: 1.5px;
+  pointer-events: none;
+  z-index: 3;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  background: radial-gradient(
+    circle 170px at var(--glare-x) var(--glare-y),
+    var(--accent-soft),
+    transparent 70%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+}
+
+.country-card.is-visited .card-glare,
+.country-card.is-wishlist .card-glare {
+  background:
+    radial-gradient(circle 190px at var(--glare-x) var(--glare-y), rgba(253, 230, 138, 0.28), transparent 64%),
+    linear-gradient(125deg, rgba(245, 158, 11, 0.12), rgba(94, 234, 212, 0.14), rgba(16, 185, 129, 0.1));
+}
+
+.country-card:hover .card-glare,
+.country-card:hover .card-border-glow {
+  opacity: 1;
+}
+
+/* Layered Flag without Motion */
+.card-flag-wrap {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  margin: 0 0 12px;
+  border-radius: 12px;
+  filter: drop-shadow(0 10px 14px rgba(0, 0, 0, 0.48));
+}
+
+.card-flag-wrap img {
+  display: block;
+  width: 100%;
+  height: 128px;
+  object-fit: cover;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(0, 0, 0, 0.25);
+}
+
+/* Continent Badge & Quick Action Pills */
+.card-pills {
+  position: relative;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.region-pill {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgba(var(--accent-rgb), 0.2);
+  border: 1px solid rgba(var(--accent-rgb), 0.45);
+  color: var(--accent-soft);
+}
+
+.card-actions-mini {
+  display: flex;
+  gap: 4px;
+}
+
+.mini-action-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(4, 16, 24, 0.75);
+  color: var(--muted);
+  display: grid;
+  place-items: center;
+  font-size: 0.85rem;
+  transition: transform 0.16s ease, border-color 0.16s ease, color 0.16s ease, background 0.16s ease;
+}
+
+.mini-action-btn:hover {
+  border-color: var(--border-bright);
+  color: var(--text);
+  background: rgba(var(--accent-rgb), 0.24);
+}
+
+.mini-action-btn.is-active-gold {
+  background: rgba(245, 158, 11, 0.25);
+  border-color: var(--gold);
+  color: var(--gold-soft);
+}
+
+.mini-action-btn.is-active-emerald {
+  background: rgba(16, 185, 129, 0.25);
+  border-color: var(--emerald);
+  color: var(--emerald-soft);
+}
+
+.mini-action-btn.is-active-compare {
+  background: rgba(var(--accent-rgb), 0.3);
+  border-color: var(--accent-soft);
+  color: var(--text);
+}
+
+/* Floating Metadata */
+.card-body {
+  position: relative;
+  z-index: 1;
+}
+
+.card-name {
+  margin: 0 0 4px;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1.2;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.55);
+}
+
+.card-meta {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+/* 3D Loading Skeleton Card */
+.skeleton-card {
+  height: 245px;
+  border-radius: 18px;
+  background: linear-gradient(110deg, rgba(15, 42, 52, 0.7) 30%, rgba(45, 108, 116, 0.45) 50%, rgba(15, 42, 52, 0.7) 70%);
+  background-size: 220% 100%;
+  border: 1px solid var(--border);
+  animation: shimmer-3d 1.4s infinite linear;
+}
+
+@keyframes shimmer-3d {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+
+/* ---------- 2. 3D Flip Capsule Modal (Cara A <-> Cara B) ---------- */
+@keyframes modal-enter-3d {
+  from {
+    opacity: 0;
+    transform: perspective(1100px) rotateX(-28deg) scale(0.88);
+  }
+  to {
+    opacity: 1;
+    transform: perspective(1100px) rotateX(0deg) scale(1);
+  }
+}
+
+.flip-scene {
+  perspective: 1400px;
+}
+
+dialog[open] .flip-scene {
+  animation: modal-enter-3d 0.38s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.flip-card {
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.flip-card.is-flipped {
+  transform: rotateY(180deg);
+}
+
+.flip-face {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  border-radius: var(--radius-lg);
+  background: var(--surface-strong);
+  border: 1px solid var(--border-bright);
+  box-shadow: var(--shadow-lg);
+  padding: 22px;
+}
+
+.flip-face-back {
+  position: absolute;
+  inset: 0;
+  transform: rotateY(180deg);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.flip-card:not(.is-flipped) .flip-face-back {
+  pointer-events: none;
+}
+
+.flip-card.is-flipped .flip-face-front {
+  pointer-events: none;
+}
+
+.detail-hero {
+  display: grid;
+  grid-template-columns: minmax(180px, 240px) 1fr;
+  gap: 18px;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.detail-flag-box {
+  perspective: 700px;
+}
+
+.detail-flag-box img {
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  object-fit: cover;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.55);
+  transform: rotateY(-6deg) rotateX(4deg);
+  transition: transform 0.3s ease;
+}
+
+.detail-flag-box:hover img {
+  transform: rotateY(0deg) rotateX(0deg) scale(1.03);
+}
+
+.detail-objects-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(168px, 1fr));
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.object-pod {
+  padding: 12px;
+  border-radius: 16px;
+  background: linear-gradient(160deg, rgba(19, 51, 63, 0.72), rgba(7, 20, 28, 0.9));
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+  perspective: 600px;
+}
+
+.object-pod-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+/* ---------- 3. 3D Coat of Arms Medallion ---------- */
+.crest-medallion {
+  position: relative;
+  width: 82px;
+  height: 82px;
+  border-radius: 50%;
+  padding: 4px;
+  background: conic-gradient(from 45deg, #fde68a, #b45309, #fbbf24, #78350f, #fde68a);
+  box-shadow:
+    0 12px 24px rgba(0, 0, 0, 0.55),
+    inset 0 2px 4px rgba(255, 255, 255, 0.5);
+  transform-style: preserve-3d;
+  transition: transform 0.35s ease;
+}
+
+.object-pod:hover .crest-medallion {
+  transform: rotateY(14deg) rotateX(8deg) scale(1.05);
+}
+
+.crest-inner {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #1d3c47, #091821);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  transform: translateZ(12px);
+  padding: 10px;
+}
+
+.crest-inner img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.5));
+}
+
+.crest-fallback {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.15rem;
+  letter-spacing: 0.06em;
+  color: var(--gold-soft);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+/* ---------- 4. 3D Spinning Currency Coin ---------- */
+.coin-stage {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.coin-3d {
+  width: 78px;
+  height: 78px;
+  position: relative;
+  transform-style: preserve-3d;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  animation: coin-idle 7s ease-in-out infinite;
+}
+
+@keyframes coin-idle {
+  0%, 100% { transform: rotateY(-14deg) rotateX(6deg); }
+  50% { transform: rotateY(18deg) rotateX(-4deg); }
+}
+
+.coin-3d.is-flipped {
+  animation: none;
+  transform: rotateY(180deg);
+}
+
+.coin-face {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  backface-visibility: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  border: 3px dashed rgba(253, 230, 138, 0.65);
+  background: radial-gradient(circle at 30% 25%, #fde68a, #d97706 62%, #78350f);
+  color: #271303;
+  box-shadow:
+    inset 0 2px 5px rgba(255, 255, 255, 0.6),
+    0 10px 22px rgba(0, 0, 0, 0.45);
+}
+
+.coin-face-front {
+  transform: translateZ(4px);
+}
+
+.coin-face-rim {
+  position: absolute;
+  inset: 1px;
+  border-radius: 50%;
+  background: #92400e;
+  transform: translateZ(0px);
+}
+
+.coin-face-back {
+  transform: rotateY(180deg) translateZ(4px);
+  font-size: 0.66rem;
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.coin-symbol {
+  font-family: var(--font-display);
+  font-size: 1.45rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.coin-code {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  margin-top: 2px;
+}
+
+/* ---------- 5. 3D Cartographic Compass + Live Clock ---------- */
+.compass-3d {
+  --bearing: 0deg;
+  position: relative;
+  width: 78px;
+  height: 78px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, #194252, #07151f);
+  border: 2px solid var(--border-bright);
+  box-shadow:
+    inset 0 0 14px rgba(0, 0, 0, 0.7),
+    0 10px 20px rgba(0, 0, 0, 0.45);
+  display: grid;
+  place-items: center;
+  transform-style: preserve-3d;
+}
+
+.compass-cardinal {
+  position: absolute;
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.compass-cardinal.n { top: 4px; color: var(--accent-soft); }
+.compass-cardinal.s { bottom: 4px; }
+.compass-cardinal.e { right: 6px; }
+.compass-cardinal.o { left: 6px; }
+
+.compass-needle {
+  width: 10px;
+  height: 50px;
+  transform: translateZ(10px) rotate(var(--bearing));
+  transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+  position: relative;
+}
+
+.compass-needle::before,
+.compass-needle::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+}
+
+.compass-needle::before {
+  top: 0;
+  border-bottom: 25px solid #ef4444;
+}
+
+.compass-needle::after {
+  bottom: 0;
+  border-top: 25px solid #e2e8f0;
+}
+
+.live-clock-pill {
+  font-family: var(--font-mono);
+  font-size: 0.92rem;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--border);
+}
+
+/* ---------- 6. 3D Mini Weather Objects (Open-Meteo) ---------- */
+.weather-obj-3d {
+  position: relative;
+  width: 68px;
+  height: 68px;
+  display: grid;
+  place-items: center;
+  transform-style: preserve-3d;
+}
+
+.wx-sun {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 32% 30%, #fef08a, #f59e0b 65%, #b45309);
+  box-shadow: 0 0 24px rgba(245, 158, 11, 0.7);
+  animation: wx-float 3.6s ease-in-out infinite;
+}
+
+.wx-moon {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #f8fafc, #94a3b8);
+  box-shadow: inset -8px -4px 0 #334155, 0 0 18px rgba(148, 163, 184, 0.45);
+  animation: wx-float 4s ease-in-out infinite;
+}
+
+.wx-cloud {
+  position: relative;
+  width: 48px;
+  height: 24px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #f1f5f9, #94a3b8);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+  animation: wx-float 3.8s ease-in-out infinite;
+}
+
+.wx-cloud::before,
+.wx-cloud::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #ffffff, #cbd5e1);
+}
+
+.wx-cloud::before {
+  width: 24px;
+  height: 24px;
+  top: -11px;
+  left: 7px;
+}
+
+.wx-cloud::after {
+  width: 18px;
+  height: 18px;
+  top: -7px;
+  right: 7px;
+}
+
+.wx-drops {
+  position: absolute;
+  bottom: 4px;
+  display: flex;
+  gap: 7px;
+}
+
+.wx-drops span {
+  width: 4px;
+  height: 10px;
+  border-radius: 999px;
+  background: #38bdf8;
+  animation: wx-rain 0.9s linear infinite;
+}
+
+.wx-drops span:nth-child(2) { animation-delay: 0.3s; }
+.wx-drops span:nth-child(3) { animation-delay: 0.6s; }
+
+@keyframes wx-float {
+  0%, 100% { transform: translateY(0) translateZ(10px); }
+  50% { transform: translateY(-5px) translateZ(18px); }
+}
+
+@keyframes wx-rain {
+  0% { transform: translateY(-4px); opacity: 1; }
+  100% { transform: translateY(12px); opacity: 0; }
+}
+
+/* ---------- 7. 3D Volumetric Comparison Prisms ---------- */
+.prism-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.prism-card {
+  padding: 14px;
+  border-radius: 16px;
+  background: rgba(7, 21, 30, 0.8);
+  border: 1px solid var(--border);
+}
+
+.prism-card h3 {
+  margin: 0 0 12px;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.prism-stage {
+  height: 175px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-around;
+  gap: 14px;
+  padding: 24px 10px 10px;
+  perspective: 700px;
+}
+
+.prism-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  height: 100%;
+  justify-content: flex-end;
+}
+
+.prism-value {
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--text);
+  text-align: center;
+}
+
+.prism-bar {
+  --h: 40%;
+  --p-color: #14b8a6;
+  --p-side: #0f766e;
+  --p-top: #5eead4;
+
+  position: relative;
+  width: 36px;
+  height: var(--h);
+  min-height: 12px;
+  transform-style: preserve-3d;
+  transform: rotateX(-16deg) rotateY(-28deg);
+  transition: height 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.prism-face-front {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, var(--p-color), rgba(0, 0, 0, 0.38));
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transform: translateZ(12px);
+}
+
+.prism-face-side {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 6px;
+  width: 24px;
+  background: linear-gradient(180deg, var(--p-side), rgba(0, 0, 0, 0.55));
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  transform: rotateY(90deg) translateZ(18px);
+}
+
+.prism-face-top {
+  position: absolute;
+  top: -12px;
+  left: 0;
+  width: 36px;
+  height: 24px;
+  background: var(--p-top);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  transform: rotateX(90deg);
+}
+
+.prism-label {
+  font-size: 0.75rem;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* ---------- 8. 3D Collectible Passport Stamps ---------- */
+.stamps-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(145px, 1fr));
+  gap: 12px;
+}
+
+.stamp-3d {
+  padding: 12px 10px;
+  border-radius: 14px;
+  border: 2px dashed rgba(245, 158, 11, 0.65);
+  background: radial-gradient(circle at 30% 25%, rgba(245, 158, 11, 0.16), rgba(9, 24, 33, 0.92));
+  text-align: center;
+  transform: rotate(var(--tilt, -2deg));
+  transition: transform 0.22s ease, box-shadow 0.22s ease;
+  cursor: pointer;
+}
+
+.stamp-3d.is-wishlist {
+  border-color: rgba(16, 185, 129, 0.6);
+  background: radial-gradient(circle at 30% 25%, rgba(16, 185, 129, 0.15), rgba(9, 24, 33, 0.92));
+}
+
+.stamp-3d:hover {
+  transform: rotate(0deg) translateY(-3px) scale(1.03);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.45);
+}
+
+.stamp-3d img {
+  width: 44px;
+  height: 30px;
+  object-fit: cover;
+  border-radius: 6px;
+  margin-bottom: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+/* ---------- Wiki, Borders & Leaflet Map ---------- */
+.wiki-box {
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+  margin: 14px 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: #dcf7f1;
+}
+
+.detail-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
+  gap: 10px;
+  margin: 14px 0;
+}
+
+.fact-box {
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(4, 15, 22, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.fact-box small {
+  display: block;
+  color: var(--muted);
+  font-size: 0.74rem;
+  margin-bottom: 3px;
+}
+
+.borders-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.border-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 11px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.06);
+  font-size: 0.83rem;
+  transition: transform 0.16s ease, border-color 0.16s ease, background 0.16s ease;
+}
+
+.border-btn:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent-soft);
+  background: rgba(var(--accent-rgb), 0.2);
+}
+
+.border-btn img {
+  width: 20px;
+  height: 14px;
+  object-fit: cover;
+  border-radius: 3px;
+}
+
+#leaflet-map {
+  width: 100%;
+  height: 410px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: #07131c;
+}
+
+.atlas-dark-map .leaflet-tile-pane {
+  filter: invert(100%) hue-rotate(180deg) brightness(92%) contrast(92%) saturate(130%);
+}
+
+/* ---------- 9. 3D Waving Flag, Extruded Silhouette Pedestal, FX, Anti-Mercator & Quiz ---------- */
+.detail-flag-3d {
+  width: 100%;
+  height: 170px;
+  border-radius: 14px;
+  background: radial-gradient(circle at 50% 45%, rgba(var(--accent-rgb), 0.16), rgba(4, 15, 22, 0.72));
+  border: 1px solid var(--border);
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+}
+
+.detail-flag-3d canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.flag-3d-fallback {
+  width: 92%;
+  height: 90%;
+  object-fit: cover;
+  border-radius: 10px;
+}
+
+.detail-showcase-row {
+  display: grid;
+  grid-template-columns: minmax(220px, 270px) 1fr;
+  gap: 14px;
+  align-items: stretch;
+  margin: 14px 0;
+}
+
+.silhouette-pod {
+  padding: 12px;
+  border-radius: 14px;
+  background: linear-gradient(160deg, rgba(16, 44, 56, 0.72), rgba(6, 17, 25, 0.92));
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.silhouette-stage {
+  width: 100%;
+  height: 185px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: radial-gradient(circle at 50% 60%, rgba(var(--accent-rgb), 0.16), transparent 70%);
+}
+
+.silhouette-stage canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.fx-drawer {
+  margin: 12px 0;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(6, 22, 31, 0.85);
+  border: 1px solid var(--border-bright);
+}
+
+.fx-grid {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.fx-grid input,
+.fx-grid select {
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: rgba(3, 12, 18, 0.9);
+}
+
+.fx-grid input {
+  width: 110px;
+}
+
+.fx-result {
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: rgba(var(--accent-rgb), 0.18);
+  border: 1px solid rgba(var(--accent-rgb), 0.45);
+  font-weight: 700;
+  color: var(--accent-soft);
+}
+
+.mercator-section {
+  margin-top: 16px;
+  padding: 14px;
+  border-radius: 16px;
+  background: rgba(7, 21, 30, 0.8);
+  border: 1px solid var(--border);
+}
+
+.mercator-canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 10px;
+  background: rgba(4, 13, 20, 0.85);
+}
+
+.quiz-hud {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.quiz-stats-pills {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.quiz-prompt {
+  padding: 16px;
+  border-radius: 16px;
+  background: rgba(6, 19, 28, 0.82);
+  border: 1px solid var(--border);
+  text-align: center;
+  margin-bottom: 14px;
+}
+
+.quiz-question {
+  margin: 0 0 12px;
+  font-size: 1.08rem;
+}
+
+.quiz-flag-img {
+  width: min(260px, 100%);
+  height: 155px;
+  object-fit: cover;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.5);
+}
+
+.quiz-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
+}
+
+.quiz-opt-btn {
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: rgba(12, 34, 45, 0.72);
+  font-weight: 600;
+  text-align: left;
+  transition: border-color 0.16s ease, background 0.16s ease;
+}
+
+.quiz-opt-btn:hover:not(:disabled) {
+  border-color: var(--border-bright);
+  background: rgba(var(--accent-rgb), 0.2);
+}
+
+.quiz-opt-btn.is-correct {
+  border-color: var(--emerald);
+  background: rgba(16, 185, 129, 0.25);
+  color: #d1fae5;
+}
+
+.quiz-opt-btn.is-wrong {
+  border-color: var(--danger);
+  background: rgba(239, 68, 68, 0.22);
+  color: #fee2e2;
+}
+
+@media (max-width: 660px) {
+  .detail-hero,
+  .detail-showcase-row {
+    grid-template-columns: 1fr;
+  }
+}

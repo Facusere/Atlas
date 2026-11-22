@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Atlas · Explorador Geopolítico y Cartográfico 3D</title>
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="./src/styles/tokens.css">
+  <link rel="stylesheet" href="./src/styles/layout.css">
+  <link rel="stylesheet" href="./src/styles/objects3d.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+
+  <!-- Zero-Build Native ES Modules Import Map -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/",
+        "topojson-client": "https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/+esm"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">A3D</div>
+        <div>
+          <h1 class="brand-title">Atlas 3D</h1>
+          <p class="brand-sub">Explorador geopolítico, cartográfico y pasaporte interactivo</p>
+        </div>
+      </div>
+
+      <nav class="topbar-actions" aria-label="Herramientas principales">
+        <button type="button" class="btn" id="open-passport-btn">
+          🛂 Pasaporte <span class="badge-count gold tabular" id="passport-count-badge">0</span>
+        </button>
+        <button type="button" class="btn" id="open-routes-btn">🧭 Rutas</button>
+        <button type="button" class="btn" id="open-quiz-btn">🎮 Quiz 3D</button>
+        <button type="button" class="btn" id="random-country-btn">🎲 Sorpréndeme</button>
+        <button type="button" class="btn" id="open-cmd-btn" title="Paleta rápida (Ctrl + K)">
+          ⌘ Buscar <span class="kbd">Ctrl+K</span>
+        </button>
+      </nav>
+    </header>
+
+    <!-- 3D WebGL Globe Hero -->
+    <section class="globe-hero" id="globe-section" aria-label="Globo Terráqueo 3D interactivo">
+      <div class="globe-hud-top">
+        <div class="globe-hud-title">
+          <span class="live-dot" aria-hidden="true"></span>
+          <span>Globo 3D con terminador solar UTC · Arrastrá para girar o tocá una baliza</span>
+        </div>
+        <div class="globe-controls">
+          <button type="button" class="btn btn-pill" id="toggle-solar-btn">🌗 Día/Noche Real</button>
+          <button type="button" class="btn btn-pill" id="toggle-rotate-btn">⏸ Pausar giro</button>
+          <button type="button" class="btn btn-pill" id="toggle-globe-btn">Ocultar Globo</button>
+        </div>
+      </div>
+
+      <div class="globe-stage">
+        <div id="globe-canvas-wrap">
+          <div class="globe-fallback">Inicializando globo terráqueo 3D…</div>
+        </div>
+        <div class="globe-tooltip" id="globe-tooltip" role="status"></div>
+
+        <div class="globe-legend" aria-hidden="true">
+          <span class="legend-item"><span class="legend-swatch" style="background:#5eead4"></span> País</span>
+          <span class="legend-item"><span class="legend-swatch" style="background:#fbbf24"></span> Visitado ★</span>
+          <span class="legend-item"><span class="legend-swatch" style="background:#34d399"></span> Por visitar ⚑</span>
+          <span class="legend-item"><span class="legend-swatch" style="background:#ffffff"></span> Activo</span>
+        </div>
+
+        <div class="globe-route-banner" id="globe-route-banner" aria-live="polite"></div>
+      </div>
+    </section>
+
+    <!-- Search, Filters & Sort Controls -->
+    <section class="controls-panel" aria-label="Búsqueda y filtros de países">
+      <div class="controls-row">
+        <div class="search-wrap">
+          <label for="q" class="sr-only">Buscar país, capital o código ISO</label>
+          <input id="q" type="search" placeholder="Buscar país en español o inglés, capital o código ISO…" autocomplete="off">
+          <button type="button" class="search-clear" id="q-clear" aria-label="Limpiar búsqueda">✕</button>
+        </div>
+
+        <label for="reg" class="sr-only">Filtrar por continente</label>
+        <select id="reg" class="control-select">
+          <option value="">Todos los continentes</option>
+          <option value="Americas">Américas</option>
+          <option value="Europe">Europa</option>
+          <option value="Africa">África</option>
+          <option value="Asia">Asia</option>
+          <option value="Oceania">Oceanía</option>
+          <option value="Antarctic">Antártida</option>
+        </select>
+
+        <label for="subreg" class="sr-only">Filtrar por subregión</label>
+        <select id="subreg" class="control-select">
+          <option value="">Todas las subregiones</option>
+        </select>
+
+        <label for="ord" class="sr-only">Ordenar por</label>
+        <select id="ord" class="control-select">
+          <option value="name">Orden: Nombre</option>
+          <option value="population">Orden: Población</option>
+          <option value="area">Orden: Superficie</option>
+          <option value="density">Orden: Densidad</option>
+        </select>
+
+        <button type="button" class="btn" id="ord-dir" aria-label="Cambiar dirección de ordenamiento">↑ Asc</button>
+      </div>
+
+      <div class="controls-meta">
+        <div class="chip-group" role="group" aria-label="Filtro de pasaporte">
+          <button type="button" class="chip is-active" data-passport-filter="all">Todos</button>
+          <button type="button" class="chip" data-passport-filter="visited">★ Visitados</button>
+          <button type="button" class="chip" data-passport-filter="wishlist">⚑ Por visitar</button>
+        </div>
+        <span id="results-count" aria-live="polite">Cargando países…</span>
+      </div>
+    </section>
+
+    <!-- 3D Sculptural Cards Grid -->
+    <main>
+      <div class="country-grid" id="grid"></div>
+      <div class="grid-footer">
+        <button type="button" class="btn" id="load-all-btn" hidden>Mostrar todos los países restantes</button>
+        <div class="sentinel" id="sentinel" aria-hidden="true"></div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Floating Compare Dock -->
+  <aside class="compare-dock" id="compare-dock" aria-label="Comparador de países"></aside>
+
+  <!-- Native Modals -->
+  <dialog class="atlas-dialog" id="country-modal"></dialog>
+  <dialog class="atlas-dialog" id="route-modal"></dialog>
+  <dialog class="atlas-dialog" id="passport-modal"></dialog>
+  <dialog class="atlas-dialog" id="compare-modal"></dialog>
+  <dialog class="atlas-dialog" id="quiz-modal"></dialog>
+  <dialog class="atlas-dialog cmd-dialog" id="cmd-modal"></dialog>
+
+  <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js"></script>
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,189 @@
+/* ==========================================================================
+   Atlas 3D — Design Tokens, Dynamic Continent Themes & Base Accessibility
+   ========================================================================== */
+
+:root {
+  --bg-1: #0b3d3a;
+  --bg-2: #0a141f;
+  --bg-3: #12202e;
+  --accent: #14b8a6;
+  --accent-rgb: 20, 184, 166;
+  --accent-soft: #5eead4;
+  --glow: rgba(20, 184, 166, 0.34);
+
+  --surface: rgba(13, 35, 45, 0.78);
+  --surface-strong: rgba(11, 29, 39, 0.94);
+  --surface-elevated: rgba(19, 51, 63, 0.86);
+  --border: rgba(143, 214, 200, 0.22);
+  --border-bright: rgba(94, 234, 212, 0.45);
+
+  --text: #f1fff9;
+  --muted: #9dd4ca;
+  --muted-2: #6ea8a0;
+
+  --gold: #f59e0b;
+  --gold-soft: #fde68a;
+  --emerald: #10b981;
+  --emerald-soft: #6ee7b7;
+  --danger: #f87171;
+  --danger-bg: rgba(90, 29, 29, 0.72);
+
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 22px;
+  --shadow-lg: 0 24px 60px rgba(0, 0, 0, 0.55);
+
+  --font-sans: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-display: "Space Grotesk", "Trebuchet MS", "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "Cascadia Code", "Fira Code", monospace;
+}
+
+/* Dynamic Atmospheric Palettes by Continent */
+:root[data-region="Americas"] {
+  --bg-1: #08382d;
+  --bg-3: #0d2129;
+  --accent: #10b981;
+  --accent-rgb: 16, 185, 129;
+  --accent-soft: #6ee7b7;
+  --glow: rgba(16, 185, 129, 0.36);
+}
+
+:root[data-region="Europe"] {
+  --bg-1: #0f2547;
+  --bg-3: #111b2e;
+  --accent: #3b82f6;
+  --accent-rgb: 59, 130, 246;
+  --accent-soft: #93c5fd;
+  --glow: rgba(59, 130, 246, 0.36);
+}
+
+:root[data-region="Africa"] {
+  --bg-1: #3b240b;
+  --bg-3: #1e1712;
+  --accent: #f59e0b;
+  --accent-rgb: 245, 158, 11;
+  --accent-soft: #fcd34d;
+  --glow: rgba(245, 158, 11, 0.36);
+}
+
+:root[data-region="Asia"] {
+  --bg-1: #3c121b;
+  --bg-3: #1e1320;
+  --accent: #ef4444;
+  --accent-rgb: 239, 68, 68;
+  --accent-soft: #fca5a5;
+  --glow: rgba(239, 68, 68, 0.34);
+}
+
+:root[data-region="Oceania"] {
+  --bg-1: #093545;
+  --bg-3: #0f1f2d;
+  --accent: #06b6d4;
+  --accent-rgb: 6, 182, 212;
+  --accent-soft: #67e8f9;
+  --glow: rgba(6, 182, 212, 0.38);
+}
+
+:root[data-region="Antarctic"] {
+  --bg-1: #182742;
+  --bg-3: #0e1628;
+  --accent: #818cf8;
+  --accent-rgb: 129, 140, 248;
+  --accent-soft: #c7d2fe;
+  --glow: rgba(129, 140, 248, 0.36);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: dark;
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: var(--font-sans);
+  color: var(--text);
+  background:
+    radial-gradient(1100px 600px at 15% -10%, var(--glow), transparent 60%),
+    radial-gradient(900px 550px at 88% 10%, rgba(var(--accent-rgb), 0.16), transparent 60%),
+    linear-gradient(160deg, var(--bg-1), var(--bg-2) 48%, var(--bg-3));
+  background-attachment: fixed;
+  transition: background 0.55s ease;
+  overflow-x: hidden;
+}
+
+/* Living Cartographic Meridian Grid Overlay */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.24;
+  background-image:
+    linear-gradient(to right, rgba(var(--accent-rgb), 0.11) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(var(--accent-rgb), 0.11) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: radial-gradient(ellipse at 50% 25%, black 25%, transparent 82%);
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent-soft);
+  outline-offset: 2px;
+}
+
+input,
+select,
+button {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+/* View Transitions API smooth morphs */
+@keyframes vt-fade-in {
+  from { opacity: 0; transform: scale(0.97); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+::view-transition-new(root) {
+  animation: vt-fade-in 0.22s ease;
+}
+
+/* Respect Reduced Motion Preference */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
