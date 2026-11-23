@@ -87,31 +87,31 @@ export class CommandPaletteController {
       {
         type: "action",
         title: "🧭 Abrir Calculador de Rutas Terrestres",
-        sub: "Trazar camino entre fronteras en el Globo 3D",
+        sub: "Trazar camino entre fronteras en el Globo",
         run: () => this.actions.openRoutes(),
       },
       {
         type: "action",
-        title: "🎮 Jugar Quiz Geográfico 3D",
-        sub: "Banderas, capitales, siluetas 3D y desafíos de fronteras",
+        title: "🎮 Jugar Quiz Geográfico",
+        sub: "Banderas, capitales, siluetas y desafíos de fronteras",
         run: () => this.actions.openQuiz(),
       },
       {
         type: "action",
-        title: "🛂 Abrir Pasaporte de Viajero 3D",
+        title: "🛂 Abrir Pasaporte de Viajero",
         sub: "Ver sellos visitados y por visitar",
         run: () => this.actions.openPassport(),
       },
       {
         type: "action",
         title: "🎲 Sorpréndeme (País aleatorio)",
-        sub: "Volar en el Globo 3D a una nación al azar",
+        sub: "Volar en el Globo a una nación al azar",
         run: () => this.actions.openRandomCountry(),
       },
       {
         type: "action",
         title: "🌗 Alternar Terminador Solar Día/Noche",
-        sub: "Cambiar iluminación real UTC del Globo 3D",
+        sub: "Cambiar iluminación real UTC del Globo",
         run: () => this.actions.toggleSolar(),
       },
       {

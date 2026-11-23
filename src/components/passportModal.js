@@ -64,8 +64,8 @@ export class PassportModalController {
       : `<div class="status-box" style="grid-column:1/-1">
            <p style="margin:0;color:var(--muted)">
              ${this.activeTab === "visited"
-               ? "Todavía no sellaste ningún país como visitado. Usá ★ en cualquier tarjeta para pintarlo de dorado en el Globo 3D."
-               : "Tu lista de destinos por visitar está vacía. Usá ⚑ en cualquier tarjeta para agregarla aquí y pintarla de esmeralda en el Globo 3D."}
+               ? "Todavía no sellaste ningún país como visitado. Usá ★ en cualquier tarjeta para pintarlo de dorado en el Globo."
+               : "Tu lista de destinos por visitar está vacía. Usá ⚑ en cualquier tarjeta para agregarla aquí y pintarla de esmeralda en el Globo."}
            </p>
          </div>`;
 
@@ -73,7 +73,7 @@ export class PassportModalController {
       <div class="dialog-panel">
         <div class="dialog-head">
           <div>
-            <h2>🛂 Pasaporte de Viajero 3D</h2>
+            <h2>🛂 Pasaporte de Viajero</h2>
             <p class="dialog-sub">Tus países visitados brillan en dorado y tus deseos en esmeralda sobre el Globo Terráqueo</p>
           </div>
           <button type="button" class="btn" id="passport-close-btn" aria-label="Cerrar">✕</button>

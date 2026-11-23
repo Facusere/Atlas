@@ -30,6 +30,8 @@ class AtlasStore {
       globe: {
         solarTerminator: true,
         autoRotate: true,
+        showClouds: true,
+        showPins: true,
         collapsed: false,
       },
       status: "loading", // "loading" | "ready" | "error"

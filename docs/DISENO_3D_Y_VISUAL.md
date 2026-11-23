@@ -1,6 +1,6 @@
-# Diseño 3D de Objetos y Sistema Visual
+# Diseño de Objetos 3D y Sistema Visual
 
-Este documento especifica el diseño estético, espacial y técnico de los **objetos tridimensionales y efectos visuales** implementados en **Atlas 3D**, combinando **WebGL (Three.js + GLSL)** y **CSS 3D (`preserve-3d`)** con foco en fluidez a 60 FPS, gestión segura de contextos GPU y accesibilidad.
+Este documento especifica el diseño estético, espacial y técnico de los **objetos tridimensionales, shaders y componentes visuales** implementados en **Atlas**, combinando **WebGL (Three.js + GLSL)** y **CSS 3D (`preserve-3d`)** con foco en fluidez a 60 FPS, limpieza visual en títulos, gestión segura de contextos GPU y accesibilidad.
 
 ---
 
@@ -8,77 +8,67 @@ Este documento especifica el diseño estético, espacial y técnico de los **obj
 
 ```mermaid
 flowchart TD
-    Scene["Sistema Visual de Atlas 3D"] --> WebGL["Capa WebGL (Three.js + GLSL)"]
+    Scene["Sistema Visual de Atlas"] --> WebGL["Capa WebGL (Three.js + GLSL)"]
     Scene --> CSS3D["Capa CSS 3D + Spotlight"]
-    WebGL --> G1["Globo Satelital NASA + Nubes + Estrellas + Anillo"]
-    WebGL --> G2["Terminador Solar UTC + Brillo Oceanico + Pasaporte"]
+    WebGL --> G1["Globo Satelital NASA + Nubes Solares + Corona + Estrellas"]
+    WebGL --> G2["Atmosfera Rayleigh + Terminador UTC + Brillo Oceanico"]
     WebGL --> G3["Bandera 3D con Shader de Tela (flag3d.js)"]
     WebGL --> G4["Silueta Extruida 3D en Pedestal (silhouette3d.js)"]
     CSS3D --> C1["Tarjetas Estables con Foco y Borde Reactivo al Mouse"]
-    CSS3D --> C2["Medallon Escudo + Moneda 3D Giratoria + Conversor"]
-    CSS3D --> C3["Brujula Cartografica + Mini Objetos 3D Climaticos"]
-    CSS3D --> C4["Prismas Volumetricos + Sellos 3D + Capsula Flip 180°"]
+    CSS3D --> C2["Escudo sin Circulo + Moneda Giratoria + Galeria de Billetes"]
+    CSS3D --> C3["Brujula Cartografica + Clima + Capsula Flip Scrolleable"]
+    CSS3D --> C4["Prismas Volumetricos + Sellos del Pasaporte"]
 ```
 
 ---
 
 ## 2. Catálogo Completo de Objetos 3D y Visuales
 
-### Objeto 1 — Globo Terráqueo 3D Cinematográfico (`globe3d.js`)
-- **Texturas Satelitales NASA + Fallback Instantáneo**: Inicia de inmediato con texturas procedurales `50m` y se actualiza en segundo plano con **NASA Blue Marble** (día), **NASA Black Marble** (luces urbanas nocturnas) y **mapa topográfico** (`earth-topology.png`) para sombreado de cordilleras.
-- **Brillo Solar Oceánico (Blinn-Phong)**: Máscara oceánica generada desde `world-atlas 50m` para reflejar la luz del sol únicamente sobre mares y océanos.
-- **Terminador Solar UTC Real en Shader GLSL**: Calcula la posición real del sol según la fecha y hora UTC, mezclando día y noche con una banda cálida de crepúsculo en el horizonte solar (con toggle a *Luz Completa*).
-- **Overlay del Pasaporte y Fronteras `50m`**: Capa transparente `2048×1024` superpuesta que pinta en tiempo real países **Visitados** en dorado, **Por visitar** en esmeralda y el país activo en cian brillante.
-- **Entorno Espacial**:
-  - **Campo de estrellas 3D (`THREE.Points`)**: 1.600 estrellas distribuidas en esfera lejana (`R = 14..28`) con sprite suave y tintes estelares cálidos/fríos.
-  - **Capa de nubes 3D (`SphereGeometry`)**: Nubes procedurales translúcidas rotando suavemente hacia el este.
-  - **Anillo orbital cartográfico (`TorusGeometry`)**: Aro sutil inclinado `23.4°` teñido con el color del continente filtrado.
-  - **Atmósfera Fresnel dinámica** + **Balizas `InstancedMesh` (1 draw call)** + **Arcos geodésicos animados (`QuadraticBezierCurve3`)**.
+### Objeto 1 — Globo Terráqueo Cinematográfico (`globe3d.js`)
+- **Texturas Satelitales NASA + Fallback Instantáneo**: Inicia al instante con texturas procedurales `50m` y se actualiza en segundo plano con **NASA Blue Marble** (día), **NASA Black Marble** (luces urbanas nocturnas potenciadas con `pow(nightCol, 0.88) * 1.95`) y **mapa topográfico** (`earth-topology.png`) para sombreado de cordilleras en tierra firme.
+- **Brillo Solar Oceánico (Blinn-Phong)**: Máscara oceánica generada desde `world-atlas 50m` (`uWaterTex`) para reflejar el brillo especular del sol únicamente sobre mares y océanos.
+- **Terminador Solar UTC Real en Shader GLSL**: Calcula la dirección real del sol (`getSunDirection`) según fecha y hora UTC, mezclando día, crepúsculo cálido y noche estrellada (alternable vía `🌗 Día/Noche Real`).
+- **Atmósfera Rayleigh Suave (`1.11×R`)**: Halo atmosférico en cara posterior (`BackSide` + `AdditiveBlending`) cuyo brillo cae suavemente a `0` en el borde externo (`clamp((-dot(vNormal, vView)) / 0.434, 0.0, 1.0)`) para eliminar contornos duros y atenuarse en el hemisferio nocturno.
+- **Capa de Nubes Solares (`SphereGeometry(1.015×R)`)**: Shader dedicado que recibe `uSunDir` para iluminar nubes en la cara diurna y atenuarlas en la nocturna (alternable vía `☁️ Nubes`).
+- **Corona Solar + Campo Estelar + Anillo Orbital**: Sprite aditivo solar (`uSunDir * 14`), 1.600 estrellas tintadas (`R = 14..28`) y anillo orbital inclinado teñido con el color de la región activa.
+- **Balizas Estilizadas `InstancedMesh` + Anillos de Selección y Hover**: Pins cónicos esbeltos (`CylinderGeometry(0.0042, 0.0018, 0.026, 8)`) con toggle `📍 Balizas`, anillo cian en país seleccionado, anillo dorado reactivo en hover y arcos geodésicos animados (`QuadraticBezierCurve3`).
+- **Overlay del Pasaporte y Fronteras `50m`**: Capa transparente `2048×1024` que pinta países **Visitados** en dorado, **Por visitar** en esmeralda y el país activo en cian brillante.
 
-### Objeto 2 — Bandera 3D con Simulación de Tela (`flag3d.js`)
-- Presente en la cabecera de la ficha de cada país (`WavingFlag3D`):
-  - Mástil metálico cilíndrico con remate esférico dorado a la izquierda.
-  - Malla subdividida (`PlaneGeometry(2.85, 1.85, 36, 22)`) anclada al mástil en `uv.x = 0`.
-  - **Shader GLSL personalizado** con ondas senoidales compuestas y sombreado de pliegues calculado desde la derivada de la onda; mover el mouse sobre la bandera intensifica la brisa e inclina la tela suavemente.
-  - Fallback automático a imagen `<img>` si `prefers-reduced-motion` está activo o si falla WebGL.
+### Objeto 2 — Bandera con Simulación de Tela WebGL (`flag3d.js`)
+- En la cabecera de la ficha (`WavingFlag3D`): mástil metálico cilíndrico con remate esférico dorado, malla `PlaneGeometry(2.85, 1.85, 36, 22)` anclada en `uv.x = 0` y shader GLSL de ondas compuestas con sombreado dinámico al mover el cursor sobre la bandera.
+- Fallback automático a `<img>` si `prefers-reduced-motion` está activo o WebGL no está disponible.
 
-### Objeto 3 — Silueta Geográfica Extruida 3D en Pedestal (`silhouette3d.js`)
-- Presente en la ficha del país y en el modo *Silueta 3D* del Quiz (`CountrySilhouette3D`):
-  - Toma el polígono real `50m` del país proyectado en kilómetros compensados por latitud (`projectFeatureToKm`), construye `THREE.ExtrudeGeometry` con bisel metálico y lo monta sobre un **pedestal circular holográfico** con anillos concéntricos.
-  - Incluye un **pin luminoso 3D en la capital** (ocultado automáticamente en el Quiz para no dar pistas) y permite giro libre arrastrando con el cursor.
+### Objeto 3 — Silueta Geográfica Extruida en Pedestal (`silhouette3d.js`)
+- Usada tanto en la ficha del país como en el modo *Silueta* del Quiz (`CountrySilhouette3D`):
+  - Proyecta el polígono real `50m` en kilómetros compensados por latitud (`projectFeatureToKm`), construye `THREE.ExtrudeGeometry` con bisel metálico y lo monta sobre un pedestal circular holográfico con pin en la capital (ocultado en el Quiz).
 
 ### Objeto 4 — Tarjeta Estable con Foco Luminoso de Mouse (`cardGrid.js` + `objects3d.css`)
-- **Sin movimiento ni inclinación al pasar el mouse**: Se eliminó la rotación `rotateX`/`rotateY` en las tarjetas para garantizar estabilidad absoluta al leer y pulsar los botones de acción rápidos.
-- **Efecto interactivo del puntero**: Al mover el mouse sobre cualquier tarjeta, `requestAnimationFrame` actualiza `--glare-x` y `--glare-y` para proyectar:
-  1. Un **foco radial luminoso** sobre la superficie cristalina (`.card-glare`).
-  2. Un **borde iluminado reactivo** mediante máscara CSS (`mask-composite: exclude` en `.card-border-glow`) que ilumina el perímetro más cercano al puntero.
-  3. Un **acabado holográfico *foil*** dorado/esmeralda en los países del Pasaporte.
+- **Sin movimiento ni inclinación al pasar el mouse**: Cero rotación `rotateX`/`rotateY` en las tarjetas para mantener estabilidad total sobre las banderas y botones de acción rápida.
+- **Efecto interactivo del puntero**: Actualiza `--glare-x` y `--glare-y` con `requestAnimationFrame` para proyectar un foco radial luminoso (`.card-glare`), un borde reactivo con `mask-composite: exclude` (`.card-border-glow`) y un acabado holográfico *foil* en países del Pasaporte.
 
-### Objeto 5 — Medallón de Escudo Nacional en Relieve (`coatOfArms`)
-Disco con marco metálico cónico dorado, fondo oscuro y escudo SVG elevado a `translateZ(12px)`, con degradación automática a monograma `ISO-3` en relieve si el territorio no tiene escudo oficial.
+### Objetos 5 a 8 — Franja de Objetos Equilibrados en la Ficha (`.detail-objects-strip`)
+Las 4 tarjetas de objetos comparten una altura mínima uniforme (`min-height: 224px`, `justify-content: space-between`) con el pie alineado en una misma fila visual:
+1. **Escudo Nacional libre sin círculo (`.crest-logo-wrap`)**: SVG de `120×112 px` sin fondo circular ni borde contenedor, destacando su silueta real con `drop-shadow` y respaldo tipográfico `ISO-3`.
+2. **Moneda Giratoria + Acceso al Conversor (`.object-pod--currency`)**: Moneda 3D de doble cara (`.coin-3d`), descripción compacta y botón en una sola línea `💱 Conversor y billetes`; hacer clic en cualquier parte de la tarjeta, moneda o botón despliega o contrae el panel.
+3. **Brújula Cartográfica + Reloj UTC (`104×104 px`)**: Rosa de los vientos (`N · E · S · O`) cuya aguja rotatoria (`--bearing`) apunta hacia cada país limítrofe al hacer hover, sobre la píldora de hora local en vivo.
+4. **Clima en Vivo (`96×96 px`)**: Mini esculturas animadas (sol, luna, nubes, gotas de lluvia, nieve y tormenta) sincronizadas con Open-Meteo.
 
-### Objeto 6 — Moneda 3D Giratoria + Conversor (`objects3d.js`)
-Moneda metálica tridimensional (`coin-3d`) con anverso (símbolo y código ISO), canto y reverso (`rotateY(180deg)`) con el nombre de la divisa, acompañada del botón **`💱 Convertir`** para desplegar el conversor en vivo.
+### Objeto 9 — Galería de Billetes sin Recortes + Visor Ampliado (`detailModal.js` + `objects3d.css`)
+- Cada tarjeta de billete (`.banknote-card`) usa `.banknote-photo-wrap` (`height: 118px`) con `object-fit: contain` en `.banknote-img`, asegurando que tanto infografías casi cuadradas del BCRA como billetes panorámicos de Wikimedia se muestren completos sin recortes laterales ni verticales.
+- Incluye un botón superior discreto de lupa (`🔍`, `.banknote-zoom-btn`, hermano accesible del botón principal de carga) que abre `.banknote-lightbox` para inspeccionar el billete ampliado con título, motivo y cierre por clic exterior, botón `✕` o tecla `Escape`.
+- Las monedas vigentes (`.circ-coin`) solo se renderizan cuando la divisa tiene monedas circulantes reales verificadas (`gold`, `silver`, `bronze`, `bimetal`).
 
-### Objeto 7 — Brújula Cartográfica 3D + Reloj en Vivo
-Rosa de los vientos (`N · E · S · O`) cuya aguja gira dinámicamente (`--bearing`) para **apuntar hacia el país limítrofe** seleccionado al hacer hover, junto al reloj local en tiempo real (`☀️` / `🌙`).
-
-### Objeto 8 — Mini Objetos 3D Climáticos
-Sol, luna nocturna, sol parcialmente nublado, nube volumétrica, lluvia con gotas animadas, nieve o tormenta según el código WMO en vivo de Open-Meteo.
-
-### Objeto 9 — Prismas Volumétricos 3D + Comparador Anti-Mercator
-Columnas isométricas tridimensionales centradas (frente, lateral y tapa unidos sin separación) para comparar **Población**, **Superficie** y **Densidad**, complementadas por un **lienzo comparativo igual-área en escala real** (`mercator-canvas`).
-
-### Objeto 10 — Sellos 3D Coleccionables del Pasaporte
-Insignias con borde punteado dorado o esmeralda e inclinación orgánica dentro del modal de Pasaporte.
-
-### Objeto 11 — Cápsula Modal Flip 180° + *View Transitions API*
-Entrada suavizada mediante *View Transitions API* (`document.startViewTransition`) y giro `180°` en eje Y entre **Cara A (Ficha + Objetos 3D)** y **Cara B (Mapa Leaflet oscuro con OpenStreetMap)**.
+### Objetos 10 y 11 — Prismas Volumétricos, Sellos del Pasaporte y Cápsula Flip Scrolleable
+- **Prismas isométricos**: Columnas tridimensionales unidas sin separación en el Comparador para Población, Superficie y Densidad, junto al lienzo **Anti-Mercator**.
+- **Sellos coleccionables**: Insignias punteadas en el Pasaporte.
+- **Cápsula Modal Flip 180° (`max-height: 88vh; overflow-y: auto`)**: Cara A (ficha técnica + objetos + conversor/billetes scrolleable) y Cara B (mapa Leaflet oscuro con OpenStreetMap), con animación de entrada mediante *View Transitions API* y títulos limpios sin aclarar `"3D"`.
 
 ---
 
-## 3. Paleta Atmosférica Dinámica y Gestión GPU
+## 3. Paleta Atmosférica Dinámica, Identidad Visual y Gestión GPU
 
 - **Temas dinámicos por continente** (`:root[data-region]`): Turquesa (Global), Esmeralda (`Americas`), Zafiro (`Europe`), Ámbar (`Africa`), Carmesí (`Asia`), Aguamarina (`Oceania`) e Índigo hielo (`Antarctic`).
-- **Ciclo de vida WebGL limpio**: Tanto `WavingFlag3D` como `CountrySilhouette3D` implementan `dispose()` liberando geometrías, texturas, listeners de ventana y ejecutando `renderer.forceContextLoss()` para no saturar el límite de contextos WebGL del navegador al abrir múltiples países o jugar rondas sucesivas del Quiz.
-- **Accesibilidad**: Respeto estricto a `@media (prefers-reduced-motion: reduce)` en CSS y en los tres módulos WebGL.
+- **Logo vectorial cartográfico + regreso al inicio (`#brand-home-link`)**: Emblema SVG propio (esfera meridiana con estrella de brújula dorada en cabecera y favicon); hacer clic en el logo o título **Atlas** cierra modales abiertos, restablece filtros/búsqueda y vuelve suavemente al inicio de la página.
+- **Barras de desplazamiento temáticas (`tokens.css`)**: Scrollbars delgados y redondeados (`9px` en página principal y `7px` en `.dialog-panel`, `.flip-face` y `.cmd-list`) sin flechas nativas y tintados dinámicamente con `--accent-rgb` del continente activo, con respaldo `@supports not selector(::-webkit-scrollbar)` mediante `scrollbar-width` y `scrollbar-color`.
+- **Ciclo de vida WebGL limpio**: `WavingFlag3D` y `CountrySilhouette3D` ejecutan `dispose()` + `renderer.forceContextLoss()` al cerrar modales o cambiar de pregunta en el Quiz.
+- **Accesibilidad**: Respeto estricto a `@media (prefers-reduced-motion: reduce)` en CSS y WebGL.

@@ -32,17 +32,35 @@
   gap: 12px;
 }
 
+.brand-home-link {
+  text-decoration: none;
+  color: inherit;
+  border-radius: 14px;
+  padding: 2px 8px 2px 2px;
+  transition: transform 0.18s ease, background 0.18s ease;
+}
+
+.brand-home-link:hover {
+  background: rgba(var(--accent-rgb), 0.1);
+}
+
+.brand-home-link:hover .brand-mark {
+  transform: scale(1.06) rotate(-4deg);
+  border-color: var(--accent-soft);
+  box-shadow: 0 8px 24px var(--glow), inset 0 1px 1px rgba(255, 255, 255, 0.35);
+}
+
 .brand-mark {
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
+  width: 44px;
+  height: 44px;
+  border-radius: 13px;
   display: grid;
   place-items: center;
-  font-weight: 800;
-  font-family: var(--font-display);
-  background: linear-gradient(135deg, var(--accent), #0f766e);
-  color: #041b19;
-  box-shadow: 0 6px 18px var(--glow), inset 0 1px 1px rgba(255, 255, 255, 0.45);
+  flex-shrink: 0;
+  background: radial-gradient(circle at 30% 25%, rgba(var(--accent-rgb), 0.32), rgba(5, 22, 31, 0.96));
+  border: 1px solid var(--border-bright);
+  box-shadow: 0 6px 20px var(--glow), inset 0 1px 1px rgba(255, 255, 255, 0.25);
+  transition: transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;
 }
 
 .brand-title {
@@ -159,7 +177,7 @@
 
 .globe-stage {
   position: relative;
-  height: clamp(320px, 46vh, 450px);
+  height: clamp(360px, 48vh, 490px);
   width: 100%;
 }
 

@@ -47,7 +47,7 @@ export class ComparatorController {
       <strong style="font-size:0.84rem">Comparador (${countries.length}/3):</strong>
       <div class="compare-pills">${pillsHtml}</div>
       <button type="button" class="btn btn-primary btn-pill" id="open-compare-modal-btn" ${countries.length < 2 ? "disabled" : ""}>
-        Comparar en 3D
+        Comparar
       </button>
       <button type="button" class="btn btn-pill" id="clear-compare-btn">Limpiar</button>
     `;
@@ -125,8 +125,8 @@ export class ComparatorController {
       <div class="dialog-panel">
         <div class="dialog-head">
           <div>
-            <h2>📊 Comparador Volumétrico 3D</h2>
-            <p class="dialog-sub">Contraste proporcional con prismas isométricos 3D entre ${countries.map((c) => esc(c.nameEs)).join(" vs. ")}</p>
+            <h2>📊 Comparador Volumétrico</h2>
+            <p class="dialog-sub">Contraste proporcional entre ${countries.map((c) => esc(c.nameEs)).join(" vs. ")}</p>
           </div>
           <button type="button" class="btn" id="compare-close-btn" aria-label="Cerrar">✕</button>
         </div>

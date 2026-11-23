@@ -264,6 +264,9 @@ dialog[open] .flip-scene {
   border: 1px solid var(--border-bright);
   box-shadow: var(--shadow-lg);
   padding: 22px;
+  max-height: 88vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .flip-face-back {
@@ -318,16 +321,26 @@ dialog[open] .flip-scene {
 }
 
 .object-pod {
-  padding: 12px;
+  padding: 14px 12px;
+  min-height: 224px;
   border-radius: 16px;
   background: linear-gradient(160deg, rgba(19, 51, 63, 0.72), rgba(7, 20, 28, 0.9));
   border: 1px solid var(--border);
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: space-between;
   text-align: center;
   gap: 8px;
   perspective: 600px;
+}
+
+.object-pod-foot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
 }
 
 .object-pod-label {
@@ -337,51 +350,54 @@ dialog[open] .flip-scene {
   color: var(--muted);
 }
 
-/* ---------- 3. 3D Coat of Arms Medallion ---------- */
-.crest-medallion {
+/* ---------- 3. Coat of Arms Logo (no background circle) ---------- */
+.crest-logo-wrap {
   position: relative;
-  width: 82px;
-  height: 82px;
-  border-radius: 50%;
-  padding: 4px;
-  background: conic-gradient(from 45deg, #fde68a, #b45309, #fbbf24, #78350f, #fde68a);
-  box-shadow:
-    0 12px 24px rgba(0, 0, 0, 0.55),
-    inset 0 2px 4px rgba(255, 255, 255, 0.5);
-  transform-style: preserve-3d;
-  transition: transform 0.35s ease;
+  width: 120px;
+  height: 112px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: auto 0;
+  transition: transform 0.25s ease;
 }
 
-.object-pod:hover .crest-medallion {
-  transform: rotateY(14deg) rotateX(8deg) scale(1.05);
+.object-pod:hover .crest-logo-wrap {
+  transform: scale(1.06);
 }
 
-.crest-inner {
+.crest-logo-wrap img {
+  display: block;
   width: 100%;
   height: 100%;
-  border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #1d3c47, #091821);
-  display: grid;
-  place-items: center;
-  overflow: hidden;
-  transform: translateZ(12px);
-  padding: 10px;
-}
-
-.crest-inner img {
-  max-width: 100%;
-  max-height: 100%;
   object-fit: contain;
-  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.5));
+  filter: drop-shadow(0 8px 14px rgba(0, 0, 0, 0.55));
 }
 
 .crest-fallback {
   font-family: var(--font-display);
   font-weight: 800;
-  font-size: 1.15rem;
-  letter-spacing: 0.06em;
+  font-size: 1.45rem;
+  letter-spacing: 0.08em;
   color: var(--gold-soft);
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.75);
+}
+
+.object-pod--currency {
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.object-pod--currency:hover {
+  border-color: var(--border-bright);
+  box-shadow: 0 10px 26px rgba(var(--accent-rgb), 0.18);
+}
+
+.fx-toggle-btn {
+  white-space: nowrap;
+  font-size: 0.76rem;
+  padding: 6px 10px;
 }
 
 /* ---------- 4. 3D Spinning Currency Coin ---------- */
@@ -469,34 +485,35 @@ dialog[open] .flip-scene {
 .compass-3d {
   --bearing: 0deg;
   position: relative;
-  width: 78px;
-  height: 78px;
+  width: 104px;
+  height: 104px;
   border-radius: 50%;
   background: radial-gradient(circle at 40% 35%, #194252, #07151f);
   border: 2px solid var(--border-bright);
   box-shadow:
-    inset 0 0 14px rgba(0, 0, 0, 0.7),
+    inset 0 0 16px rgba(0, 0, 0, 0.7),
     0 10px 20px rgba(0, 0, 0, 0.45);
   display: grid;
   place-items: center;
   transform-style: preserve-3d;
+  margin: auto 0;
 }
 
 .compass-cardinal {
   position: absolute;
-  font-size: 0.62rem;
+  font-size: 0.72rem;
   font-weight: 700;
   color: var(--muted);
 }
 
-.compass-cardinal.n { top: 4px; color: var(--accent-soft); }
-.compass-cardinal.s { bottom: 4px; }
-.compass-cardinal.e { right: 6px; }
-.compass-cardinal.o { left: 6px; }
+.compass-cardinal.n { top: 5px; color: var(--accent-soft); }
+.compass-cardinal.s { bottom: 5px; }
+.compass-cardinal.e { right: 8px; }
+.compass-cardinal.o { left: 8px; }
 
 .compass-needle {
-  width: 10px;
-  height: 50px;
+  width: 12px;
+  height: 66px;
   transform: translateZ(10px) rotate(var(--bearing));
   transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
   position: relative;
@@ -507,18 +524,18 @@ dialog[open] .flip-scene {
   content: "";
   position: absolute;
   left: 0;
-  border-left: 5px solid transparent;
-  border-right: 5px solid transparent;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
 }
 
 .compass-needle::before {
   top: 0;
-  border-bottom: 25px solid #ef4444;
+  border-bottom: 33px solid #ef4444;
 }
 
 .compass-needle::after {
   bottom: 0;
-  border-top: 25px solid #e2e8f0;
+  border-top: 33px solid #e2e8f0;
 }
 
 .live-clock-pill {
@@ -534,38 +551,39 @@ dialog[open] .flip-scene {
 /* ---------- 6. 3D Mini Weather Objects (Open-Meteo) ---------- */
 .weather-obj-3d {
   position: relative;
-  width: 68px;
-  height: 68px;
+  width: 96px;
+  height: 96px;
   display: grid;
   place-items: center;
   transform-style: preserve-3d;
+  margin: auto 0;
 }
 
 .wx-sun {
-  width: 36px;
-  height: 36px;
+  width: 56px;
+  height: 56px;
   border-radius: 50%;
   background: radial-gradient(circle at 32% 30%, #fef08a, #f59e0b 65%, #b45309);
-  box-shadow: 0 0 24px rgba(245, 158, 11, 0.7);
+  box-shadow: 0 0 28px rgba(245, 158, 11, 0.72);
   animation: wx-float 3.6s ease-in-out infinite;
 }
 
 .wx-moon {
-  width: 34px;
-  height: 34px;
+  width: 52px;
+  height: 52px;
   border-radius: 50%;
   background: radial-gradient(circle at 30% 30%, #f8fafc, #94a3b8);
-  box-shadow: inset -8px -4px 0 #334155, 0 0 18px rgba(148, 163, 184, 0.45);
+  box-shadow: inset -11px -6px 0 #334155, 0 0 22px rgba(148, 163, 184, 0.48);
   animation: wx-float 4s ease-in-out infinite;
 }
 
 .wx-cloud {
   position: relative;
-  width: 48px;
-  height: 24px;
+  width: 70px;
+  height: 34px;
   border-radius: 999px;
   background: linear-gradient(180deg, #f1f5f9, #94a3b8);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 10px 18px rgba(0, 0, 0, 0.42);
   animation: wx-float 3.8s ease-in-out infinite;
 }
 
@@ -578,17 +596,17 @@ dialog[open] .flip-scene {
 }
 
 .wx-cloud::before {
-  width: 24px;
-  height: 24px;
-  top: -11px;
-  left: 7px;
+  width: 34px;
+  height: 34px;
+  top: -16px;
+  left: 10px;
 }
 
 .wx-cloud::after {
-  width: 18px;
-  height: 18px;
-  top: -7px;
-  right: 7px;
+  width: 26px;
+  height: 26px;
+  top: -10px;
+  right: 10px;
 }
 
 .wx-drops {
@@ -924,6 +942,224 @@ dialog[open] .flip-scene {
   border: 1px solid rgba(var(--accent-rgb), 0.45);
   font-weight: 700;
   color: var(--accent-soft);
+}
+
+.fx-cash-wrap {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.fx-cash-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.banknotes-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(158px, 1fr));
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.banknote-card {
+  position: relative;
+  border-radius: 10px;
+  border: 1.5px solid rgba(255, 255, 255, 0.24);
+  background: linear-gradient(145deg, var(--note-bg, #1f5b55), rgba(7, 17, 26, 0.94));
+  color: var(--note-accent, #f1fff9);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08), 0 6px 14px rgba(0, 0, 0, 0.35);
+  transition: transform 0.15s ease, border-color 0.15s ease;
+  overflow: hidden;
+}
+
+.banknote-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.68);
+}
+
+.banknote-body-btn {
+  width: 100%;
+  padding: 8px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.banknote-zoom-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(4, 15, 22, 0.78);
+  color: #f0fdfa;
+  font-size: 0.74rem;
+  display: grid;
+  place-items: center;
+  opacity: 0.86;
+  transition: transform 0.15s ease, background 0.15s ease, opacity 0.15s ease;
+}
+
+.banknote-zoom-btn:hover {
+  opacity: 1;
+  transform: scale(1.1);
+  background: rgba(var(--accent-rgb), 0.75);
+}
+
+.banknote-photo-wrap {
+  width: 100%;
+  height: 118px;
+  padding: 4px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: rgba(2, 10, 16, 0.58);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.banknote-img {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: 4px;
+  display: block;
+}
+
+.fx-cash-empty {
+  margin: 4px 0 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px dashed rgba(255, 255, 255, 0.18);
+  background: rgba(3, 12, 18, 0.52);
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.banknote-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgba(2, 9, 14, 0.86);
+  backdrop-filter: blur(8px);
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
+
+.banknote-lightbox[hidden] {
+  display: none;
+}
+
+.banknote-lightbox-card {
+  width: min(760px, 94vw);
+  max-height: 88vh;
+  padding: 16px;
+  border-radius: 18px;
+  border: 1px solid var(--border-bright);
+  background: rgba(7, 22, 31, 0.96);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.banknote-lightbox-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.banknote-lightbox-img {
+  width: 100%;
+  max-height: 68vh;
+  object-fit: contain;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.banknote-meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.banknote-val {
+  font-family: var(--font-display);
+  font-size: 0.98rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.banknote-theme {
+  font-size: 0.7rem;
+  opacity: 0.88;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.coins-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.circ-coin {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 2px dashed rgba(255, 255, 255, 0.35);
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  font-weight: 800;
+  display: grid;
+  place-items: center;
+  box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.45), 0 5px 10px rgba(0, 0, 0, 0.4);
+  transition: transform 0.15s ease;
+}
+
+.circ-coin:hover {
+  transform: scale(1.08);
+}
+
+.circ-coin.metal-gold {
+  background: radial-gradient(circle at 30% 25%, #fef08a, #d97706 70%, #78350f);
+  color: #271303;
+}
+
+.circ-coin.metal-silver {
+  background: radial-gradient(circle at 30% 25%, #f8fafc, #94a3b8 72%, #475569);
+  color: #0f172a;
+}
+
+.circ-coin.metal-bronze {
+  background: radial-gradient(circle at 30% 25%, #fdba74, #b45309 70%, #5c2808);
+  color: #271104;
+}
+
+.circ-coin.metal-bimetal {
+  background: radial-gradient(circle at center, #fde68a 42%, #94a3b8 46%, #475569 100%);
+  color: #1e293b;
 }
 
 .mercator-section {

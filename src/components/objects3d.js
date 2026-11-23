@@ -2,7 +2,7 @@ import { esc, safeUrl } from "../utils/sanitize.js";
 import { getLocalTimeFromUtc, weatherCodeToInfo } from "../utils/formatters.js";
 
 /**
- * 3D Coat of Arms Medallion with safe image fallback to embossed ISO3 monogram.
+ * Coat of Arms Logo without background circle (safe fallback to embossed ISO3 monogram).
  */
 export function renderCoatOfArmsPod(country) {
   const safeCoat = safeUrl(country.coatOfArmsUrl);
@@ -12,17 +12,17 @@ export function renderCoatOfArmsPod(country) {
 
   return `
     <div class="object-pod">
-      <span class="object-pod-label">Escudo 3D</span>
-      <div class="crest-medallion">
-        <div class="crest-inner">${inner}</div>
+      <span class="object-pod-label">Escudo</span>
+      <div class="crest-logo-wrap">${inner}</div>
+      <div class="object-pod-foot">
+        <small style="color:var(--muted)">Emblema nacional</small>
       </div>
-      <small style="color:var(--muted)">Emblema nacional</small>
     </div>
   `;
 }
 
 /**
- * 3D Spinning Currency Coins (click any coin to flip between front symbol & back name).
+ * Spinning Currency Coins + Clickable Card Trigger for Live FX Converter & Current Banknotes.
  */
 export function renderCurrencyPod(currencies) {
   const list = (currencies && currencies.length ? currencies : [{ code: "—", name: "Sin divisa", symbol: "¤" }]).slice(0, 2);
@@ -44,17 +44,19 @@ export function renderCurrencyPod(currencies) {
   const primaryCode = list[0]?.code && list[0].code !== "—" ? list[0].code : "";
 
   return `
-    <div class="object-pod">
-      <span class="object-pod-label">Moneda 3D (clic)</span>
-      <div class="coin-stage">${coinsHtml}</div>
-      <small style="color:var(--muted)">${esc(list.map((c) => `${c.name} (${c.code})`).join(" · "))}</small>
-      ${primaryCode ? `<button type="button" class="btn btn-pill" id="detail-fx-toggle" data-fx-code="${esc(primaryCode)}">💱 Convertir ${esc(primaryCode)}</button>` : ""}
+    <div class="object-pod ${primaryCode ? "object-pod--currency" : ""}" ${primaryCode ? `id="detail-currency-pod" data-fx-code="${esc(primaryCode)}" role="button" tabindex="0"` : ""}>
+      <span class="object-pod-label">Moneda</span>
+      <div class="coin-stage" style="margin:auto 0">${coinsHtml}</div>
+      <div class="object-pod-foot">
+        <small style="color:var(--muted)">${esc(list.map((c) => `${c.name} (${c.code})`).join(" · "))}</small>
+        ${primaryCode ? `<button type="button" class="btn btn-pill fx-toggle-btn" id="detail-fx-toggle" data-fx-code="${esc(primaryCode)}">💱 Conversor y billetes</button>` : ""}
+      </div>
     </div>
   `;
 }
 
 /**
- * 3D Cartographic Compass + Live Local Clock Pod.
+ * Cartographic Compass + Live Local Clock Pod.
  */
 export function renderCompassClockPod(country) {
   const primaryTz = country.timezones?.[0] || "UTC";
@@ -71,24 +73,28 @@ export function renderCompassClockPod(country) {
         <span class="compass-cardinal o">O</span>
         <span class="compass-needle"></span>
       </div>
-      <span class="live-clock-pill tabular" id="detail-live-clock" data-tz="${esc(primaryTz)}">
-        ${initialClock.isDay ? "☀️" : "🌙"} ${esc(initialClock.timeStr)}
-      </span>
-      <small style="color:var(--muted)">${esc(primaryTz)}</small>
+      <div class="object-pod-foot">
+        <span class="live-clock-pill tabular" id="detail-live-clock" data-tz="${esc(primaryTz)}">
+          ${initialClock.isDay ? "☀️" : "🌙"} ${esc(initialClock.timeStr)}
+        </span>
+        <small style="color:var(--muted)">${esc(primaryTz)}</small>
+      </div>
     </div>
   `;
 }
 
 /**
- * 3D Mini Weather Object Container (updated asynchronously by Open-Meteo).
+ * Mini Weather Object Container (updated asynchronously by Open-Meteo).
  */
 export function renderWeatherPodSkeleton(capitalName) {
   return `
     <div class="object-pod" id="detail-weather-pod">
       <span class="object-pod-label">Clima en vivo</span>
       <div class="weather-obj-3d"><div class="wx-cloud" style="opacity:0.45"></div></div>
-      <span class="tabular" style="font-weight:700">Consultando…</span>
-      <small style="color:var(--muted)">${esc(capitalName)}</small>
+      <div class="object-pod-foot">
+        <span class="tabular" style="font-weight:700">Consultando…</span>
+        <small style="color:var(--muted)">${esc(capitalName)}</small>
+      </div>
     </div>
   `;
 }
@@ -98,8 +104,10 @@ export function renderWeatherPodContent(weather, capitalName) {
     return `
       <span class="object-pod-label">Clima en vivo</span>
       <div class="weather-obj-3d"><div class="wx-cloud" style="opacity:0.4"></div></div>
-      <span>No disponible</span>
-      <small style="color:var(--muted)">${esc(capitalName)}</small>
+      <div class="object-pod-foot">
+        <span>No disponible</span>
+        <small style="color:var(--muted)">${esc(capitalName)}</small>
+      </div>
     `;
   }
 
@@ -107,7 +115,7 @@ export function renderWeatherPodContent(weather, capitalName) {
   let modelHtml = `<div class="wx-sun"></div>`;
   if (info.kind === "moon") modelHtml = `<div class="wx-moon"></div>`;
   else if (info.kind === "cloud" || info.kind === "fog") modelHtml = `<div class="wx-cloud"></div>`;
-  else if (info.kind === "partly") modelHtml = `<div class="wx-sun" style="transform:translate(8px,-6px) scale(0.75)"></div><div class="wx-cloud" style="position:absolute"></div>`;
+  else if (info.kind === "partly") modelHtml = `<div class="wx-sun" style="transform:translate(10px,-8px) scale(0.76)"></div><div class="wx-cloud" style="position:absolute"></div>`;
   else if (info.kind === "rain" || info.kind === "storm") {
     modelHtml = `<div class="wx-cloud"></div><div class="wx-drops"><span></span><span></span><span></span></div>`;
   } else if (info.kind === "snow") {
@@ -117,7 +125,9 @@ export function renderWeatherPodContent(weather, capitalName) {
   return `
     <span class="object-pod-label">Clima en vivo</span>
     <div class="weather-obj-3d">${modelHtml}</div>
-    <span class="tabular" style="font-size:1.15rem;font-weight:800">${esc(weather.temp)} °C</span>
-    <small style="color:var(--muted)">${esc(info.label)} · Viento ${esc(weather.wind)} km/h</small>
+    <div class="object-pod-foot">
+      <span class="tabular" style="font-size:1.38rem;font-weight:800">${esc(weather.temp)} °C</span>
+      <small style="color:var(--muted)">${esc(info.label)} · Viento ${esc(weather.wind)} km/h</small>
+    </div>
   `;
 }

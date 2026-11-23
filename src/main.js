@@ -105,6 +105,19 @@ function resetAllFilters() {
   });
 }
 
+function goHome() {
+  document.querySelectorAll("dialog.atlas-dialog[open]").forEach((dlg) => dlg.close());
+  resetAllFilters();
+  updateSubregionSelect();
+  store.clearActiveRoute();
+  globe.clearArcs();
+  if (store.state.globe.collapsed) {
+    store.toggleGlobeOption("collapsed");
+  }
+  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  window.scrollTo({ top: 0, behavior: reducedMotion ? "auto" : "smooth" });
+}
+
 function updateTopbarPassportBadge() {
   const visitedCount = Object.keys(store.state.visited).filter((id) => store.state.countryIndex.has(id)).length;
   const badge = $("passport-count-badge");
@@ -123,8 +136,10 @@ function updateSubregionSelect() {
 function updateGlobeHud() {
   const g = store.state.globe;
   $("globe-section").classList.toggle("is-collapsed", g.collapsed);
-  $("toggle-globe-btn").textContent = g.collapsed ? "Mostrar Globo 3D" : "Ocultar Globo";
+  $("toggle-globe-btn").textContent = g.collapsed ? "Mostrar Globo" : "Ocultar Globo";
   $("toggle-solar-btn").textContent = g.solarTerminator ? "🌗 Día/Noche Real" : "☀️ Luz Completa";
+  $("toggle-clouds-btn").textContent = g.showClouds ? "☁️ Nubes: Sí" : "☁️ Nubes: No";
+  $("toggle-pins-btn").textContent = g.showPins ? "📍 Balizas: Sí" : "📍 Balizas: No";
   $("toggle-rotate-btn").textContent = g.autoRotate ? "⏸ Pausar giro" : "▶ Girar";
   globe.updateGlobeOptions(g);
 }
@@ -161,6 +176,11 @@ function syncToolbarControls() {
 }
 
 function bindToolbarEvents() {
+  $("brand-home-link")?.addEventListener("click", (e) => {
+    e.preventDefault();
+    goHome();
+  });
+
   let debounceTimer = null;
   $("q").addEventListener("input", (e) => {
     const val = e.target.value;
@@ -210,6 +230,8 @@ function bindToolbarEvents() {
   $("open-cmd-btn").addEventListener("click", () => commandPalette.open());
 
   $("toggle-solar-btn").addEventListener("click", () => store.toggleGlobeOption("solarTerminator"));
+  $("toggle-clouds-btn").addEventListener("click", () => store.toggleGlobeOption("showClouds"));
+  $("toggle-pins-btn").addEventListener("click", () => store.toggleGlobeOption("showPins"));
   $("toggle-rotate-btn").addEventListener("click", () => store.toggleGlobeOption("autoRotate"));
   $("toggle-globe-btn").addEventListener("click", () => store.toggleGlobeOption("collapsed"));
 }

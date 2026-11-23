@@ -8,6 +8,7 @@ import {
   regionToEs,
 } from "../utils/formatters.js";
 import { fetchCapitalWeather, fetchExchangeRates, fetchWikiSummaryEs } from "../api/countriesClient.js";
+import { enrichCurrencyShowcase, getCurrencyShowcase } from "../api/currencyCatalog.js";
 import { loadWorldGeo } from "../api/worldGeo.js";
 import { WavingFlag3D } from "./flag3d.js";
 import { CountrySilhouette3D } from "./silhouette3d.js";
@@ -48,6 +49,14 @@ export class DetailModalController {
       this.dispose3D();
       if (this.store.state.activeCountryId) {
         this.store.closeCountry();
+      }
+    });
+
+    this.dialogEl.addEventListener("cancel", (e) => {
+      const lb = this.dialogEl.querySelector("#detail-banknote-lightbox");
+      if (lb && !lb.hidden) {
+        e.preventDefault();
+        lb.hidden = true;
       }
     });
 
@@ -140,13 +149,13 @@ export class DetailModalController {
                 <p class="dialog-sub">${esc(country.officialNameEs)} · ${esc(regionToEs(country.region))} (${esc(country.subregion)})</p>
               </div>
               <div style="display:flex;gap:8px;flex-wrap:wrap">
-                <button type="button" class="btn btn-primary" id="flip-to-map-btn">🗺️ Ver mapa 3D</button>
+                <button type="button" class="btn btn-primary" id="flip-to-map-btn">🗺️ Ver mapa</button>
                 <button type="button" class="btn" id="detail-close-btn" aria-label="Cerrar detalle">✕</button>
               </div>
             </div>
 
             <div class="detail-hero">
-              <div class="detail-flag-3d" id="detail-flag-3d" title="Bandera 3D ondeando (mové el mouse)"></div>
+              <div class="detail-flag-3d" id="detail-flag-3d" title="Bandera de ${esc(country.nameEs)}"></div>
               <div>
                 <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
                   <button type="button" class="btn btn-pill ${isVisited ? "btn-primary" : ""}" id="detail-visit-btn">
@@ -183,11 +192,11 @@ export class DetailModalController {
             <!-- Inline Currency Converter Drawer -->
             <div class="fx-drawer" id="detail-fx-drawer" hidden></div>
 
-            <!-- 3D Extruded Country Silhouette Pedestal + Wikipedia ES -->
+            <!-- Extruded Country Silhouette Pedestal + Wikipedia ES -->
             <div class="detail-showcase-row">
               <div class="silhouette-pod">
                 <div style="display:flex;justify-content:space-between;align-items:center;width:100%">
-                  <span class="object-pod-label">Relieve 3D · ${esc(country.nameEs)}</span>
+                  <span class="object-pod-label">Relieve · ${esc(country.nameEs)}</span>
                   <small style="color:var(--muted);font-size:0.72rem">Arrastrá para girar</small>
                 </div>
                 <div class="silhouette-stage" id="detail-silhouette-3d"></div>
@@ -219,7 +228,7 @@ export class DetailModalController {
                 <p class="dialog-sub">Capital: ${esc(country.capitalText)} · Tocá cualquier marcador limítrofe para viajar allí</p>
               </div>
               <div style="display:flex;gap:8px">
-                <button type="button" class="btn btn-primary" id="flip-to-front-btn">↩ Volver a ficha 3D</button>
+                <button type="button" class="btn btn-primary" id="flip-to-front-btn">↩ Volver a ficha</button>
                 <button type="button" class="btn" id="detail-close-back-btn" aria-label="Cerrar">✕</button>
               </div>
             </div>
@@ -227,6 +236,7 @@ export class DetailModalController {
           </section>
         </div>
       </div>
+      <div class="banknote-lightbox" id="detail-banknote-lightbox" hidden role="dialog" aria-modal="true" aria-label="Vista ampliada de billete"></div>
     `;
 
     this.bindModalActions(country, borders);
@@ -306,21 +316,45 @@ export class DetailModalController {
       });
     }
 
-    // Currency 3D coin flip
-    this.dialogEl.querySelectorAll(".coin-3d").forEach((coinBtn) => {
-      coinBtn.addEventListener("click", () => coinBtn.classList.toggle("is-flipped"));
-    });
-
-    // Currency Converter toggle
+    // Currency card, coin flip & converter + circulating banknotes/coins drawer
+    const currencyPod = this.dialogEl.querySelector("#detail-currency-pod");
     const fxBtn = this.dialogEl.querySelector("#detail-fx-toggle");
     const fxDrawer = this.dialogEl.querySelector("#detail-fx-drawer");
-    if (fxBtn && fxDrawer) {
-      fxBtn.addEventListener("click", () => {
-        if (!fxDrawer.hidden) {
-          fxDrawer.hidden = true;
-          return;
+    const primaryCurrency = country.currencies?.[0] || { code: "USD", symbol: "$", name: "Dólar" };
+
+    const toggleFxDrawer = (forceOpen = false) => {
+      if (!fxDrawer) return;
+      if (!fxDrawer.hidden && !forceOpen) {
+        fxDrawer.hidden = true;
+        return;
+      }
+      if (fxDrawer.hidden) {
+        this.openCurrencyConverter(fxDrawer, primaryCurrency);
+      }
+    };
+
+    this.dialogEl.querySelectorAll(".coin-3d").forEach((coinBtn) => {
+      coinBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        coinBtn.classList.toggle("is-flipped");
+        toggleFxDrawer(true);
+      });
+    });
+
+    if (fxBtn) {
+      fxBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        toggleFxDrawer(false);
+      });
+    }
+
+    if (currencyPod) {
+      currencyPod.addEventListener("click", () => toggleFxDrawer(false));
+      currencyPod.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          toggleFxDrawer(false);
         }
-        this.openCurrencyConverter(fxDrawer, fxBtn.dataset.fxCode);
       });
     }
 
@@ -346,9 +380,160 @@ export class DetailModalController {
     });
   }
 
-  async openCurrencyConverter(drawerEl, countryCode) {
+  async openCurrencyConverter(drawerEl, primaryCurrency) {
+    const countryCode = primaryCurrency?.code || "USD";
     drawerEl.hidden = false;
     drawerEl.innerHTML = `<span style="color:var(--muted);font-size:0.86rem">Consultando cotizaciones en vivo…</span>`;
+
+    const openLightbox = (src, title, subtitle) => {
+      const lb = this.dialogEl.querySelector("#detail-banknote-lightbox");
+      const safeSrc = safeUrl(src);
+      if (!lb || !safeSrc) return;
+      lb.innerHTML = `
+        <div class="banknote-lightbox-card">
+          <div class="banknote-lightbox-head">
+            <div>
+              <strong style="color:var(--text);font-size:0.98rem">${esc(title)}</strong>
+              ${subtitle ? `<div style="color:var(--muted);font-size:0.78rem">${esc(subtitle)}</div>` : ""}
+            </div>
+            <button type="button" class="btn" id="banknote-lb-close" aria-label="Cerrar imagen">✕</button>
+          </div>
+          <img class="banknote-lightbox-img" src="${esc(safeSrc)}" alt="${esc(title)}" referrerpolicy="no-referrer">
+        </div>
+      `;
+      lb.hidden = false;
+      lb.querySelector("#banknote-lb-close")?.addEventListener("click", () => {
+        lb.hidden = true;
+      });
+      lb.onclick = (ev) => {
+        if (ev.target === lb) lb.hidden = true;
+      };
+    };
+
+    let cashRenderToken = 0;
+    const renderCashShowcase = (container, codeA, codeB, activeSide, onPickValue, onSwitchSide) => {
+      const myCashToken = ++cashRenderToken;
+      const targetCode = activeSide === "to" ? codeB : codeA;
+      const meta = targetCode === countryCode ? primaryCurrency : null;
+      const baseShowcase = getCurrencyShowcase(targetCode, meta?.symbol, meta?.name);
+
+      const paintShowcase = (showcase, isLoading = false) => {
+        const notesHtml = showcase.notes
+          .map((n) => {
+            const safeImg = safeUrl(n.img);
+            const photoHtml = safeImg
+              ? `<div class="banknote-photo-wrap"><img class="banknote-img" src="${esc(safeImg)}" alt="Billete ${esc(n.label)}" loading="lazy" referrerpolicy="no-referrer"></div>`
+              : `<div class="banknote-photo-wrap"><span class="banknote-val tabular">${esc(n.label)}</span></div>`;
+            const zoomBtnHtml = safeImg
+              ? `<button type="button" class="banknote-zoom-btn" data-zoom-src="${esc(safeImg)}" data-zoom-title="Billete ${esc(n.label)} · ${esc(showcase.name)}" data-zoom-sub="${esc(n.theme)}" aria-label="Ampliar billete ${esc(n.label)}" title="Ver billete en grande">🔍</button>`
+              : "";
+            return `
+              <article class="banknote-card" style="--note-bg:${esc(n.bg)};--note-accent:${esc(n.accent)}">
+                ${zoomBtnHtml}
+                <button type="button" class="banknote-body-btn" data-cash-val="${esc(n.v)}" title="Cargar ${esc(n.label)} en el conversor">
+                  ${photoHtml}
+                  <div class="banknote-meta">
+                    <span class="banknote-val tabular">${esc(n.label)}</span>
+                    <span class="banknote-theme">${esc(n.theme)}</span>
+                  </div>
+                </button>
+              </article>
+            `;
+          })
+          .join("");
+
+        const coinsSection = showcase.coins.length
+          ? `<div class="coins-row">
+               <small style="color:var(--muted);font-size:0.74rem;margin-right:4px">Monedas en uso:</small>
+               ${showcase.coins
+                 .map(
+                   (c) => `
+                   <button type="button" class="circ-coin metal-${esc(c.metal)}" data-cash-val="${esc(c.v)}" title="Cargar ${esc(c.label)} en el conversor">
+                     <span>${esc(c.label)}</span>
+                   </button>
+                 `
+                 )
+                 .join("")}
+             </div>`
+          : "";
+
+        let headingLabel = "💵 Billetes vigentes";
+        if (showcase.notes.length && showcase.coins.length) {
+          headingLabel = "💵 Billetes y monedas vigentes";
+        } else if (!showcase.notes.length && showcase.coins.length) {
+          headingLabel = "🪙 Monedas vigentes";
+        }
+
+        let bodyContent = "";
+        if (isLoading) {
+          bodyContent = `<p class="fx-cash-empty">Consultando billetes y monedas vigentes en Wikipedia para ${esc(showcase.name)} (${esc(showcase.code)})…</p>`;
+        } else if (!showcase.notes.length && !showcase.coins.length) {
+          bodyContent = `<p class="fx-cash-empty">No hay catálogo verificado de billetes ni monedas vigentes para ${esc(showcase.name)} (${esc(showcase.code)}). No se agregan denominaciones ficticias.</p>`;
+        } else {
+          bodyContent = `
+            ${showcase.notes.length ? `<div class="banknotes-row">${notesHtml}</div>` : ""}
+            ${coinsSection}
+          `;
+        }
+
+        const sourceBadge = showcase.source
+          ? `<small style="color:var(--muted);font-size:0.72rem;font-weight:400"> · ${esc(showcase.source)}</small>`
+          : "";
+
+        container.innerHTML = `
+          <div class="fx-cash-head">
+            <strong style="font-size:0.82rem;color:var(--text)">
+              ${headingLabel} · ${esc(showcase.name)} (${esc(showcase.code)})${sourceBadge}
+            </strong>
+            ${codeA !== codeB
+              ? `<div style="display:flex;gap:6px">
+                   <button type="button" class="chip ${activeSide === "from" ? "is-active" : ""}" data-cash-side="from">${esc(codeA)}</button>
+                   <button type="button" class="chip ${activeSide === "to" ? "is-active" : ""}" data-cash-side="to">${esc(codeB)}</button>
+                 </div>`
+              : ""}
+          </div>
+          ${bodyContent}
+        `;
+
+        container.querySelectorAll(".banknote-img").forEach((imgEl) => {
+          imgEl.addEventListener("error", () => {
+            const card = imgEl.closest(".banknote-card");
+            const wrap = imgEl.parentElement;
+            const valLabel = card?.querySelector(".banknote-val")?.textContent || "💵";
+            if (wrap) {
+              wrap.innerHTML = `<span class="banknote-val tabular">${esc(valLabel)}</span>`;
+            }
+            card?.querySelector(".banknote-zoom-btn")?.remove();
+          });
+        });
+
+        container.querySelectorAll(".banknote-zoom-btn").forEach((zBtn) => {
+          zBtn.addEventListener("click", (ev) => {
+            ev.stopPropagation();
+            openLightbox(zBtn.dataset.zoomSrc, zBtn.dataset.zoomTitle, zBtn.dataset.zoomSub);
+          });
+        });
+
+        container.querySelectorAll("[data-cash-side]").forEach((btn) => {
+          btn.addEventListener("click", () => onSwitchSide(btn.dataset.cashSide));
+        });
+
+        container.querySelectorAll("[data-cash-val]").forEach((btn) => {
+          btn.addEventListener("click", () => onPickValue(Number(btn.dataset.cashVal)));
+        });
+      };
+
+      const needsRemoteInfo = !baseShowcase.isSpecific;
+      const needsRemotePhotos = baseShowcase.notes.some((n) => !n.img);
+      paintShowcase(baseShowcase, needsRemoteInfo);
+
+      if (needsRemoteInfo || needsRemotePhotos) {
+        enrichCurrencyShowcase(baseShowcase).then((enriched) => {
+          if (myCashToken !== cashRenderToken || !container.isConnected) return;
+          paintShowcase(enriched, false);
+        });
+      }
+    };
 
     try {
       const fx = await fetchExchangeRates();
@@ -356,7 +541,12 @@ export class DetailModalController {
         .filter((c) => fx.rates[c]);
 
       if (!codes.includes(countryCode)) {
-        drawerEl.innerHTML = `<span style="color:var(--muted);font-size:0.86rem">La divisa ${esc(countryCode)} no cuenta con cotización pública disponible.</span>`;
+        drawerEl.innerHTML = `
+          <span style="color:var(--muted);font-size:0.86rem;display:block;margin-bottom:8px">La divisa ${esc(countryCode)} no cuenta con cotización pública disponible.</span>
+          <div class="fx-cash-wrap" id="fx-cash-showcase"></div>
+        `;
+        const cashEl = drawerEl.querySelector("#fx-cash-showcase");
+        renderCashShowcase(cashEl, countryCode, countryCode, "from", () => {}, () => {});
         return;
       }
 
@@ -377,6 +567,7 @@ export class DetailModalController {
           <div class="fx-result tabular" id="fx-output">—</div>
         </div>
         <small id="fx-unit-rate" style="color:var(--muted);display:block;margin-top:6px"></small>
+        <div class="fx-cash-wrap" id="fx-cash-showcase"></div>
       `;
 
       const amountEl = drawerEl.querySelector("#fx-amount");
@@ -384,8 +575,34 @@ export class DetailModalController {
       const toEl = drawerEl.querySelector("#fx-to");
       const outEl = drawerEl.querySelector("#fx-output");
       const unitEl = drawerEl.querySelector("#fx-unit-rate");
+      const cashEl = drawerEl.querySelector("#fx-cash-showcase");
       const nf = new Intl.NumberFormat("es-AR", { maximumFractionDigits: 2 });
       const nfUnit = new Intl.NumberFormat("es-AR", { maximumFractionDigits: 4 });
+      let cashSide = "from";
+
+      const updateCash = () => {
+        renderCashShowcase(
+          cashEl,
+          fromEl.value,
+          toEl.value,
+          cashSide,
+          (val) => {
+            if (cashSide === "to" && fromEl.value !== toEl.value) {
+              const tmp = fromEl.value;
+              fromEl.value = toEl.value;
+              toEl.value = tmp;
+              cashSide = "from";
+            }
+            amountEl.value = String(val);
+            recalc();
+            updateCash();
+          },
+          (nextSide) => {
+            cashSide = nextSide;
+            updateCash();
+          }
+        );
+      };
 
       const recalc = () => {
         const amt = parseFloat(amountEl.value) || 0;
@@ -399,18 +616,33 @@ export class DetailModalController {
       };
 
       amountEl.addEventListener("input", recalc);
-      fromEl.addEventListener("change", recalc);
-      toEl.addEventListener("change", recalc);
+      fromEl.addEventListener("change", () => {
+        cashSide = "from";
+        recalc();
+        updateCash();
+      });
+      toEl.addEventListener("change", () => {
+        cashSide = "to";
+        recalc();
+        updateCash();
+      });
       drawerEl.querySelector("#fx-swap").addEventListener("click", () => {
         const tmp = fromEl.value;
         fromEl.value = toEl.value;
         toEl.value = tmp;
         recalc();
+        updateCash();
       });
 
       recalc();
+      updateCash();
     } catch {
-      drawerEl.innerHTML = `<span style="color:var(--muted);font-size:0.86rem">No se pudieron obtener las cotizaciones en este momento.</span>`;
+      drawerEl.innerHTML = `
+        <span style="color:var(--muted);font-size:0.86rem;display:block;margin-bottom:8px">No se pudieron obtener las cotizaciones en este momento.</span>
+        <div class="fx-cash-wrap" id="fx-cash-showcase"></div>
+      `;
+      const cashEl = drawerEl.querySelector("#fx-cash-showcase");
+      renderCashShowcase(cashEl, countryCode, countryCode, "from", () => {}, () => {});
     }
   }
 

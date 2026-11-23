@@ -7,7 +7,7 @@ import { CountrySilhouette3D } from "./silhouette3d.js";
 const MODES = [
   { id: "flag", label: "🏴 Banderas" },
   { id: "capital", label: "🏛️ Capitales" },
-  { id: "silhouette", label: "🗺️ Silueta 3D" },
+  { id: "silhouette", label: "🗺️ Silueta" },
   { id: "borders", label: "🧭 Fronteras" },
 ];
 
@@ -199,7 +199,7 @@ export class QuizModalController {
     } else if (this.question?.type === "silhouette") {
       bodyHtml = `
         <div class="quiz-prompt">
-          <p class="quiz-question">¿Qué país corresponde a esta silueta 3D?</p>
+          <p class="quiz-question">¿Qué país corresponde a esta silueta?</p>
           <div class="silhouette-stage" id="quiz-silhouette-stage" style="height:210px;width:100%;max-width:340px;margin:0 auto"></div>
         </div>
         <div class="quiz-options">
@@ -216,8 +216,8 @@ export class QuizModalController {
       <div class="dialog-panel">
         <div class="dialog-head">
           <div>
-            <h2>🎮 Quiz Geográfico 3D</h2>
-            <p class="dialog-sub">Poné a prueba tu geografía · El Globo 3D viaja a cada destino al responder</p>
+            <h2>🎮 Quiz Geográfico</h2>
+            <p class="dialog-sub">Poné a prueba tu geografía · El Globo viaja a cada destino al responder</p>
           </div>
           <button type="button" class="btn" id="quiz-close-btn" aria-label="Cerrar">✕</button>
         </div>

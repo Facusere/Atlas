@@ -207,24 +207,27 @@ function createCloudsCanvas() {
   canvas.height = H;
   const ctx = canvas.getContext("2d");
 
-  // Deterministic pseudo-random wispy cloud bands
   let seed = 4217;
   const rand = () => {
     seed = (seed * 16807) % 2147483647;
     return (seed - 1) / 2147483646;
   };
 
-  for (let i = 0; i < 420; i++) {
+  for (let i = 0; i < 680; i++) {
     const x = rand() * W;
-    const y = (0.1 + rand() * 0.8) * H;
-    const rx = 20 + rand() * 85;
-    const ry = 4 + rand() * 14;
-    const alpha = 0.02 + rand() * 0.055;
+    // Concentrate bands gently around tropics & mid-latitude storm tracks
+    const bandBias = i % 3 === 0 ? 0.5 + (rand() - 0.5) * 0.16 : 0.08 + rand() * 0.84;
+    const y = bandBias * H;
+    const rx = 18 + rand() * 78;
+    const ry = 3 + rand() * 11;
+    const alpha = 0.025 + rand() * 0.065;
     const grad = ctx.createRadialGradient(x, y, 1, x, y, rx);
     grad.addColorStop(0, `rgba(255, 255, 255, ${alpha})`);
+    grad.addColorStop(0.55, `rgba(240, 249, 255, ${alpha * 0.45})`);
     grad.addColorStop(1, "rgba(255, 255, 255, 0)");
     ctx.save();
     ctx.translate(x, y);
+    ctx.rotate((rand() - 0.5) * 0.28);
     ctx.scale(1, ry / rx);
     ctx.fillStyle = grad;
     ctx.beginPath();
@@ -233,6 +236,20 @@ function createCloudsCanvas() {
     ctx.restore();
   }
   return canvas;
+}
+
+function createSunGlowTexture(THREE) {
+  const c = document.createElement("canvas");
+  c.width = 128; c.height = 128;
+  const ctx = c.getContext("2d");
+  const grad = ctx.createRadialGradient(64, 64, 2, 64, 64, 64);
+  grad.addColorStop(0, "rgba(255, 250, 232, 1.0)");
+  grad.addColorStop(0.18, "rgba(253, 224, 138, 0.85)");
+  grad.addColorStop(0.45, "rgba(251, 146, 60, 0.25)");
+  grad.addColorStop(1, "rgba(251, 146, 60, 0.0)");
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, 128, 128);
+  return new THREE.CanvasTexture(c);
 }
 
 function createStarSprite(THREE) {
@@ -263,8 +280,10 @@ export class GlobeController {
     this.cloudsMesh = null;
     this.atmosphereMesh = null;
     this.orbitalRing = null;
+    this.sunSprite = null;
     this.pinsMesh = null;
     this.activeRing = null;
+    this.hoverRing = null;
     this.arcsGroup = null;
 
     this.geoFeatures = [];
@@ -274,6 +293,7 @@ export class GlobeController {
     this.overlayTex = null;
     this.pinCountries = [];
     this.arcPulses = [];
+    this.showPins = true;
 
     this.flyTargetPos = null;
     this.isInView = true;
@@ -318,12 +338,15 @@ export class GlobeController {
         this.flyTargetPos = null;
       });
 
+      this.showPins = state.globe.showPins !== false;
       this.buildStarfield();
+      this.buildSunSprite(state.globe);
       this.buildEarth(state);
-      this.buildClouds();
-      this.buildAtmosphere(state.filters.region);
+      this.buildClouds(state.globe);
+      this.buildAtmosphere(state.filters.region, state.globe);
       this.buildOrbitalRing(state.filters.region);
       this.buildActiveRing();
+      this.buildHoverRing();
 
       this.arcsGroup = new THREE.Group();
       this.scene.add(this.arcsGroup);
@@ -470,20 +493,20 @@ export class GlobeController {
           // Blinn-Phong specular ocean sun glint
           vec3 H = normalize(L + V);
           float specAngle = max(dot(N, H), 0.0);
-          float oceanGlint = pow(specAngle, 42.0) * waterMask * 0.42;
+          float oceanGlint = pow(specAngle, 64.0) * waterMask * 0.55;
 
           vec3 col = dayCol;
           if (uUseSolar > 0.5) {
             float ndotl = dot(N, L);
-            float dayFactor = smoothstep(-0.15, 0.17, ndotl);
-            float twilight = exp(-pow(ndotl * 7.2, 2.0));
-            float sunShade = 0.42 + 0.65 * clamp(ndotl, 0.0, 1.0);
-            vec3 litDay = dayCol * sunShade + vec3(0.9, 0.96, 1.0) * oceanGlint * dayFactor;
-            vec3 litNight = nightCol * 1.35 + vec3(0.02, 0.05, 0.09);
+            float dayFactor = smoothstep(-0.14, 0.16, ndotl);
+            float twilight = exp(-pow(ndotl * 11.5, 2.0));
+            float sunShade = 0.45 + 0.65 * clamp(ndotl, 0.0, 1.0);
+            vec3 litDay = dayCol * sunShade + vec3(0.92, 0.97, 1.0) * oceanGlint * dayFactor;
+            vec3 litNight = pow(nightCol, vec3(0.88)) * 1.95 + vec3(0.015, 0.04, 0.075);
             col = mix(litNight, litDay, dayFactor);
-            col += vec3(0.98, 0.48, 0.16) * twilight * 0.28;
+            col += vec3(1.0, 0.48, 0.14) * twilight * 0.32;
           } else {
-            col = dayCol * 1.08 + vec3(0.85, 0.95, 1.0) * (oceanGlint * 0.55);
+            col = dayCol * 1.1 + vec3(0.88, 0.96, 1.0) * (oceanGlint * 0.5);
           }
 
           // Passport & border overlay composition
@@ -492,8 +515,8 @@ export class GlobeController {
 
           // Subtle Fresnel rim glow
           vec3 nView = normalize(vNormalView);
-          float fresnel = pow(1.0 - max(dot(nView, normalize(vViewDir)), 0.0), 3.1);
-          col += uAccent * fresnel * 0.36;
+          float fresnel = pow(1.0 - max(dot(nView, normalize(vViewDir)), 0.0), 3.4);
+          col += uAccent * fresnel * 0.26;
 
           gl_FragColor = vec4(col, 1.0);
         }
@@ -543,30 +566,77 @@ export class GlobeController {
     });
   }
 
-  buildClouds() {
+  buildSunSprite(globeState) {
+    const THREE = this.THREE;
+    const mat = new THREE.SpriteMaterial({
+      map: createSunGlowTexture(THREE),
+      color: 0xfff5d6,
+      transparent: true,
+      opacity: 0.9,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    });
+    this.sunSprite = new THREE.Sprite(mat);
+    this.sunSprite.scale.set(3.6, 3.6, 1);
+    this.sunSprite.position.copy(getSunDirection(THREE).multiplyScalar(14));
+    this.sunSprite.visible = globeState.solarTerminator !== false;
+    this.scene.add(this.sunSprite);
+  }
+
+  buildClouds(globeState) {
     const THREE = this.THREE;
     const cloudTex = new THREE.CanvasTexture(createCloudsCanvas());
-    const mat = new THREE.MeshBasicMaterial({
-      map: cloudTex,
+    const mat = new THREE.ShaderMaterial({
+      uniforms: {
+        uCloudTex: { value: cloudTex },
+        uSunDir: { value: getSunDirection(THREE) },
+        uUseSolar: { value: globeState.solarTerminator ? 1.0 : 0.0 },
+      },
+      vertexShader: `
+        varying vec2 vUv;
+        varying vec3 vWorldNormal;
+        void main() {
+          vUv = uv;
+          vWorldNormal = normalize((modelMatrix * vec4(normal, 0.0)).xyz);
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform sampler2D uCloudTex;
+        uniform vec3 uSunDir;
+        uniform float uUseSolar;
+        varying vec2 vUv;
+        varying vec3 vWorldNormal;
+        void main() {
+          vec4 c = texture2D(uCloudTex, vUv);
+          float ndotl = dot(normalize(vWorldNormal), normalize(uSunDir));
+          float dayLight = uUseSolar > 0.5 ? mix(0.14, 1.0, smoothstep(-0.18, 0.25, ndotl)) : 0.95;
+          gl_FragColor = vec4(vec3(0.95, 0.98, 1.0) * dayLight, c.a * 0.78 * mix(0.32, 1.0, dayLight));
+        }
+      `,
       transparent: true,
-      opacity: 0.72,
       depthWrite: false,
     });
     const geom = new THREE.SphereGeometry(EARTH_RADIUS * 1.015, 48, 48);
     this.cloudsMesh = new THREE.Mesh(geom, mat);
+    this.cloudsMesh.visible = globeState.showClouds !== false;
     this.scene.add(this.cloudsMesh);
   }
 
-  buildAtmosphere(region) {
+  buildAtmosphere(region, globeState) {
     const THREE = this.THREE;
     const mat = new THREE.ShaderMaterial({
       uniforms: {
         uColor: { value: new THREE.Color(REGION_ATMOSPHERE[region] || 0x14b8a6) },
+        uSunDir: { value: getSunDirection(THREE) },
+        uUseSolar: { value: globeState.solarTerminator ? 1.0 : 0.0 },
       },
       vertexShader: `
         varying vec3 vNormal;
         varying vec3 vView;
+        varying vec3 vNormalObj;
         void main() {
+          vNormalObj = normalize(normal);
           vNormal = normalize(normalMatrix * normal);
           vec4 mv = modelViewMatrix * vec4(position, 1.0);
           vView = normalize(-mv.xyz);
@@ -575,11 +645,19 @@ export class GlobeController {
       `,
       fragmentShader: `
         uniform vec3 uColor;
+        uniform vec3 uSunDir;
+        uniform float uUseSolar;
         varying vec3 vNormal;
         varying vec3 vView;
+        varying vec3 vNormalObj;
         void main() {
-          float intensity = pow(0.69 - dot(vNormal, vView), 2.8);
-          gl_FragColor = vec4(uColor, clamp(intensity, 0.0, 0.76));
+          // Smooth Rayleigh falloff: 0.0 at outer edge (1.11*R), peaks at Earth's limb (dot=-0.434)
+          float rim = clamp((-dot(vNormal, vView)) / 0.434, 0.0, 1.0);
+          float glow = pow(rim, 3.2);
+          float sunSide = uUseSolar > 0.5
+            ? mix(0.28, 1.0, smoothstep(-0.3, 0.4, dot(normalize(vNormalObj), normalize(uSunDir))))
+            : 0.85;
+          gl_FragColor = vec4(uColor, clamp(glow * sunSide * 0.75, 0.0, 0.78));
         }
       `,
       blending: THREE.AdditiveBlending,
@@ -588,7 +666,7 @@ export class GlobeController {
       depthWrite: false,
     });
 
-    const geom = new THREE.SphereGeometry(EARTH_RADIUS * 1.065, 48, 48);
+    const geom = new THREE.SphereGeometry(EARTH_RADIUS * 1.11, 64, 64);
     this.atmosphereMesh = new THREE.Mesh(geom, mat);
     this.scene.add(this.atmosphereMesh);
   }
@@ -609,7 +687,7 @@ export class GlobeController {
 
   buildActiveRing() {
     const THREE = this.THREE;
-    const ringGeo = new THREE.RingGeometry(0.022, 0.036, 28);
+    const ringGeo = new THREE.RingGeometry(0.018, 0.031, 28);
     const ringMat = new THREE.MeshBasicMaterial({
       color: 0x5eead4,
       side: THREE.DoubleSide,
@@ -619,6 +697,20 @@ export class GlobeController {
     this.activeRing = new THREE.Mesh(ringGeo, ringMat);
     this.activeRing.visible = false;
     this.scene.add(this.activeRing);
+  }
+
+  buildHoverRing() {
+    const THREE = this.THREE;
+    const ringGeo = new THREE.RingGeometry(0.012, 0.021, 24);
+    const ringMat = new THREE.MeshBasicMaterial({
+      color: 0xfde68a,
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0.92,
+    });
+    this.hoverRing = new THREE.Mesh(ringGeo, ringMat);
+    this.hoverRing.visible = false;
+    this.scene.add(this.hoverRing);
   }
 
   refreshTextures(state) {
@@ -635,9 +727,37 @@ export class GlobeController {
   }
 
   updateGlobeOptions(globeState) {
+    this.showPins = globeState.showPins !== false;
     if (!this.ready) return;
-    this.earthMesh.material.uniforms.uUseSolar.value = globeState.solarTerminator ? 1.0 : 0.0;
-    this.earthMesh.material.uniforms.uSunDir.value.copy(getSunDirection(this.THREE));
+    const sunDir = getSunDirection(this.THREE);
+    const useSolar = globeState.solarTerminator ? 1.0 : 0.0;
+
+    this.earthMesh.material.uniforms.uUseSolar.value = useSolar;
+    this.earthMesh.material.uniforms.uSunDir.value.copy(sunDir);
+
+    if (this.cloudsMesh) {
+      this.cloudsMesh.visible = globeState.showClouds !== false;
+      this.cloudsMesh.material.uniforms.uUseSolar.value = useSolar;
+      this.cloudsMesh.material.uniforms.uSunDir.value.copy(sunDir);
+    }
+
+    if (this.atmosphereMesh) {
+      this.atmosphereMesh.material.uniforms.uUseSolar.value = useSolar;
+      this.atmosphereMesh.material.uniforms.uSunDir.value.copy(sunDir);
+    }
+
+    if (this.sunSprite) {
+      this.sunSprite.position.copy(sunDir.clone().multiplyScalar(14));
+      this.sunSprite.visible = globeState.solarTerminator !== false;
+    }
+
+    if (this.pinsMesh) {
+      this.pinsMesh.visible = this.showPins;
+    }
+    if (!this.showPins && this.hoverRing) {
+      this.hoverRing.visible = false;
+    }
+
     this.controls.autoRotate = globeState.autoRotate && !this.reducedMotion;
   }
 
@@ -658,8 +778,8 @@ export class GlobeController {
       return;
     }
 
-    const pinGeo = new THREE.CylinderGeometry(0.0085, 0.004, 0.052, 8);
-    pinGeo.translate(0, 0.026, 0);
+    const pinGeo = new THREE.CylinderGeometry(0.0042, 0.0018, 0.026, 8);
+    pinGeo.translate(0, 0.013, 0);
     const pinMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
     const mesh = new THREE.InstancedMesh(pinGeo, pinMat, list.length);
 
@@ -672,8 +792,8 @@ export class GlobeController {
       dummy.position.copy(pos);
       dummy.quaternion.setFromUnitVectors(up, pos.clone().normalize());
       const isSelected = c.id === state.activeCountryId;
-      const scale = isSelected ? 1.8 : 1.0;
-      dummy.scale.set(scale, isSelected ? 2.1 : 1.0, scale);
+      const scale = isSelected ? 1.85 : 1.0;
+      dummy.scale.set(scale, isSelected ? 2.15 : 1.0, scale);
       dummy.updateMatrix();
       mesh.setMatrixAt(idx, dummy.matrix);
 
@@ -687,6 +807,7 @@ export class GlobeController {
 
     mesh.instanceMatrix.needsUpdate = true;
     if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+    mesh.visible = state.globe.showPins !== false;
     this.pinsMesh = mesh;
     this.scene.add(mesh);
 
@@ -789,7 +910,11 @@ export class GlobeController {
     });
 
     canvas.addEventListener("pointermove", (e) => {
-      if (!this.pinsMesh || !this.pinCountries.length) return;
+      if (!this.showPins || !this.pinsMesh || !this.pinCountries.length) {
+        if (this.hoverRing) this.hoverRing.visible = false;
+        this.tooltipEl.style.display = "none";
+        return;
+      }
       const rect = canvas.getBoundingClientRect();
       pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
       pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
@@ -805,20 +930,28 @@ export class GlobeController {
           this.tooltipEl.style.top = `${e.clientY - rect.top}px`;
           this.tooltipEl.innerHTML =
             `<strong>${esc(c.nameEs)}</strong> · ${esc(regionToEs(c.region))} · ${esc(formatNumber(c.population))} hab.`;
+          if (this.hoverRing) {
+            const pos = latLngToVec3(c.latlng[0], c.latlng[1], EARTH_RADIUS * 1.007, THREE);
+            this.hoverRing.position.copy(pos);
+            this.hoverRing.lookAt(pos.clone().multiplyScalar(2));
+            this.hoverRing.visible = true;
+          }
           return;
         }
       }
       canvas.style.cursor = "grab";
       this.tooltipEl.style.display = "none";
+      if (this.hoverRing) this.hoverRing.visible = false;
     });
 
     canvas.addEventListener("pointerleave", () => {
       this.tooltipEl.style.display = "none";
+      if (this.hoverRing) this.hoverRing.visible = false;
     });
 
     canvas.addEventListener("click", (e) => {
       const moved = Math.hypot(e.clientX - downPos.x, e.clientY - downPos.y);
-      if (moved > 6 || !this.pinsMesh) return;
+      if (moved > 6 || !this.showPins || !this.pinsMesh) return;
       const rect = canvas.getBoundingClientRect();
       pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
       pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;

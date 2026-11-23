@@ -33,7 +33,7 @@ export class RouteModalController {
         <div class="dialog-head">
           <div>
             <h2>🧭 Calculador de Rutas Terrestres</h2>
-            <p class="dialog-sub">Encontrá el camino más corto cruzando fronteras y proyectalo en arcos 3D sobre el Globo</p>
+            <p class="dialog-sub">Encontrá el camino más corto cruzando fronteras y proyectalo sobre el Globo</p>
           </div>
           <button type="button" class="btn" id="route-close-btn" aria-label="Cerrar">✕</button>
         </div>
@@ -133,7 +133,7 @@ export class RouteModalController {
       <div class="route-chain">${chainHtml}</div>
 
       <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px">
-        <button type="button" class="btn btn-primary" id="route-project-btn">🌍 Proyectar ruta en el Globo 3D</button>
+        <button type="button" class="btn btn-primary" id="route-project-btn">🌍 Proyectar ruta en el Globo</button>
         <button type="button" class="btn" id="route-clear-btn">Limpiar ruta del globo</button>
       </div>
     `;
